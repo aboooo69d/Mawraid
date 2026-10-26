@@ -4,18 +4,15 @@ import (
 	"context"
 	"errors"
 
-	"github.com/najm-x/nova/database/entities"
 	"github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/modules/user/repo"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type (
 	UserService interface {
-		CreateUser(c context.Context, req dto.CreateUserRequest) (dto.UserResponse, error)
-		UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (dto.UserResponse, error)
-		GetUserById(c context.Context, id string) (dto.UserResponse, error)
+		UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponse, error)
+		GetUserById(c context.Context, id string) (*dto.UserResponse, error)
 		GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponse, error)
 		DeleteUser(c context.Context, id string) error
 	}
@@ -31,84 +28,23 @@ func NewUserService(userRepo repo.UserRepo) UserService {
 	}
 }
 
-// 1. إنشاء مستخدم جديد
-func (s *userService) CreateUser(c context.Context, req dto.CreateUserRequest) (dto.UserResponse, error) {
-	// التحقق من عدم إرسال Provider و Consumer في نفس الوقت
-	if req.Provider != nil && req.Consumer != nil {
-		return dto.UserResponse{}, dto.ErrInvalidProfileType
-	}
-
-	// التحقق من عدم وجود رقم الهاتف مسبقاً
-	if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
-		return dto.UserResponse{}, dto.ErrPhoneAlreadyExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return dto.UserResponse{}, err
-	}
-
-	// تشفير كلمة المرور
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return dto.UserResponse{}, err
-	}
-
-	user := &entities.User{
-		Phone:    req.Phone,
-		Password: string(hashedPassword),
-		RoleID:   req.RoleID,
-		IsActive: true, // يمكنك جعلها false إذا كان التفعيل يتطلب OTP أولاً
-	}
-
-	// ربط بيانات المزود (Provider) إن وجدت
-	if req.Provider != nil {
-		user.Provider = &entities.Provider{
-			Name:        req.Provider.Name,
-			Description: req.Provider.Description,
-			StartAt:     req.Provider.StartAt,
-			EndAt:       req.Provider.EndAt,
-		}
-	}
-
-	// ربط بيانات المستهلك (Consumer) إن وجدت
-	if req.Consumer != nil {
-		user.Consumer = &entities.Consumer{
-			Name:          req.Consumer.Name,
-			IdNumber:      req.Consumer.IdNumber,
-			IdImage:       req.Consumer.IdImage,
-			IsDriver:      req.Consumer.IsDriver,
-			VehicleNumber: req.Consumer.VehicleNumber,
-			VehicleType:   req.Consumer.VehicleType,
-			IsHome:        req.Consumer.IsHome,
-			FamilyCount:   req.Consumer.FamilyCount,
-			IsBusiness:    req.Consumer.IsBusiness,
-			BusinessName:  req.Consumer.BusinessName,
-			BusinessFile:  req.Consumer.BusinessFile,
-		}
-	}
-
-	// حفظ المستخدم في قاعدة البيانات (GORM ينشئ العلاقات تلقائياً داخل Transaction)
-	if err := s.userRepo.CreateUser(c, user); err != nil {
-		return dto.UserResponse{}, err
-	}
-
-	return dto.ToUserResponse(user), nil
-}
 
 // 2. تحديث بيانات المستخدم
-func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (dto.UserResponse, error) {
+func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponse, error) {
 	// جلب المستخدم أولاً للتأكد من وجوده
 	existingUser, err := s.userRepo.GetUserById(c, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return dto.UserResponse{}, dto.ErrUserNotFound
+			return nil, dto.ErrUserNotFound
 		}
-		return dto.UserResponse{}, err
+		return nil, err
 	}
 
 	// تحديث الحقول التي تم إرسالها فقط
 	if req.Phone != nil && *req.Phone != existingUser.Phone {
 		// التأكد أن الرقم الجديد غير مستخدم من شخص آخر
 		if _, err := s.userRepo.GetUserByPhone(c, *req.Phone); err == nil {
-			return dto.UserResponse{}, dto.ErrPhoneAlreadyExists
+			return nil, dto.ErrPhoneAlreadyExists
 		}
 		existingUser.Phone = *req.Phone
 	}
@@ -175,23 +111,23 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		}
 	}
 
-	if err := s.userRepo.UpdateUser(c, id, &existingUser); err != nil {
-		return dto.UserResponse{}, err
+	if err := s.userRepo.UpdateUser(c, id, existingUser); err != nil {
+		return nil, err
 	}
 
-	return dto.ToUserResponse(&existingUser), nil
+	return dto.ToUserResponse(existingUser), nil
 }
 
-func (s *userService) GetUserById(c context.Context, id string) (dto.UserResponse, error) {
+func (s *userService) GetUserById(c context.Context, id string) (*dto.UserResponse, error) {
 	user, err := s.userRepo.GetUserById(c, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return dto.UserResponse{}, dto.ErrUserNotFound
+			return nil, dto.ErrUserNotFound
 		}
-		return dto.UserResponse{}, err
+		return nil, err
 	}
 
-	return dto.ToUserResponse(&user), nil
+	return dto.ToUserResponse(user), nil
 }
 
 func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponse, error) {
@@ -210,7 +146,7 @@ func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]
 
 	responses := make([]dto.UserResponse, len(users))
 	for i := range users {
-		responses[i] = dto.ToUserResponse(&users[i])
+		responses[i] = *dto.ToUserResponse(&users[i])
 	}
 
 	return responses, nil
