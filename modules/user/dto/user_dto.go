@@ -25,7 +25,6 @@ var (
 type CreateUserRequest struct {
 	Phone    string                 `json:"phone" binding:"required,min=9,max=20"`
 	Password string                 `json:"password" binding:"required,min=8,max=255"`
-	RoleID   uint                   `json:"role_id" binding:"required"`
 	Provider *CreateProviderRequest `json:"provider,omitempty"`
 	Consumer *CreateConsumerRequest `json:"consumer,omitempty"`
 }

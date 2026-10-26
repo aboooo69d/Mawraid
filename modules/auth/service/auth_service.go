@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
 	"github.com/najm-x/nova/modules/auth/dto"
+	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	userDto "github.com/najm-x/nova/modules/user/dto"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
 	valueHashing "github.com/najm-x/nova/pkg/value_hashing"
@@ -20,6 +21,7 @@ type (
 	}
 	authService struct {
 		userRepo   userRepo.UserRepo
+		roleRepo   roleRepo.RoleRepo
 		otpService OtpService
 	}
 )
@@ -42,10 +44,17 @@ func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateUser
 		return nil, dto.ErrInternalServer
 	}
 
+	role, err := s.roleRepo.GetRoleByName(c, roleRepo.RoleConsumer)
+	if err != nil {
+		return nil, dto.ErrInternalServer
+	}
+
 	newUser := entities.User{
 		ID:         uuid.New(),
 		Phone:      req.Phone,
 		Password:   hashedPassword,
+		RoleID:     role.ID,
+		Role:       *role,
 		IsVerified: false,
 	}
 
@@ -91,10 +100,17 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateUser
 		return nil, dto.ErrInternalServer
 	}
 
+	role, err := s.roleRepo.GetRoleByName(c, roleRepo.RoleProvider)
+	if err != nil {
+		return nil, dto.ErrInternalServer
+	}
+
 	newUser := entities.User{
 		ID:         uuid.New(),
 		Phone:      req.Phone,
 		Password:   hashedPassword,
+		RoleID:     role.ID,
+		Role:       *role,
 		IsVerified: false,
 	}
 
@@ -158,9 +174,10 @@ func (s *authService) VerifyPhone(c context.Context, phone string, code string) 
 	return nil
 }
 
-func NewAuthService(userRepo userRepo.UserRepo, otpService OtpService) AuthService {
+func NewAuthService(userRepo userRepo.UserRepo, roleRepo roleRepo.RoleRepo, otpService OtpService) AuthService {
 	return &authService{
 		userRepo:   userRepo,
+		roleRepo:   roleRepo,
 		otpService: otpService,
 	}
 }
