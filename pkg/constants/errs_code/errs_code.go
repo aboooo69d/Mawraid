@@ -18,4 +18,5 @@ const (
 	ErrDailyLimitReached  // 1013
 	ErrVerifyLimitReached // 1014
 	ErrInvalidOtp
+	ErrInvalidProfileField
 )
