@@ -8,12 +8,12 @@ import (
 
 type User struct {
 	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Phone      string    `gorm:"type:varchar(20);uniqueIndex;not null" json:"phone"`
+	Phone      string    `gorm:"type:varchar(20);not null;uniqueIndex:idx_users_phone,where:deleted_at IS NULL" json:"phone"`
 	Password   string    `gorm:"type:varchar(255);not null" json:"-"`
 	IsVerified bool      `gorm:"default:false" json:"is_verified"`
 	IsActive   bool      `gorm:"default:false" json:"is_active"`
-	Role       Role      `gorm:"forignKey:RoleID" json:"role"`
-	RoleID     uint
+	Role       Role      `gorm:"foreignKey:RoleID" json:"role"`
+	RoleID     uint      `gorm:"not null" json:"role_id"`
 	Provider   *Provider `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"provider,omitempty"`
 	Consumer   *Consumer `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"consumer,omitempty"`
 
@@ -32,7 +32,7 @@ type Provider struct {
 type Consumer struct {
 	UserID   uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
 	Name     string    `gorm:"type:varchar(250);not null" json:"name"`
-	IdNumber string    `gorm:"type:varchar(50);uniqueIndex" json:"id_number"`
+	IdNumber string    `gorm:"type:varchar(50);not null;uniqueIndex:idx_consumers_id_number,where:deleted_at IS NULL" json:"id_number"`
 	IdImage  string    `gorm:"type:varchar(500)" json:"id_image"`
 
 	IsDriver      bool    `gorm:"default:false" json:"is_driver"`
