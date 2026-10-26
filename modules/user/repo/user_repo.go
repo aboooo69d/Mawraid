@@ -34,14 +34,46 @@ func (u *userRepo) CreateUser(c context.Context, user *entities.User) error {
 }
 
 func (u *userRepo) UpdateUser(c context.Context, id string, user *entities.User) error {
-	rowsAffected, err := gorm.G[entities.User](u.db).Where("id = ?", id).Updates(c, *user)
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	return u.db.WithContext(c).Transaction(func(tx *gorm.DB) error {
+		// Select(...) is required so zero values (false, 0, "") are written too.
+		res := tx.Model(&entities.User{}).
+			Where("id = ?", id).
+			Select("Phone", "Password", "IsVerified", "IsActive", "RoleID").
+			Updates(&entities.User{
+				Phone:      user.Phone,
+				Password:   user.Password,
+				IsVerified: user.IsVerified,
+				IsActive:   user.IsActive,
+				RoleID:     user.RoleID,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		if user.Provider != nil {
+			if err := tx.Model(&entities.Provider{}).
+				Where("user_id = ?", id).
+				Select("Name", "Description", "StartAt", "EndAt").
+				Updates(user.Provider).Error; err != nil {
+				return err
+			}
+		}
+
+		if user.Consumer != nil {
+			if err := tx.Model(&entities.Consumer{}).
+				Where("user_id = ?", id).
+				Select("Name", "IdNumber", "IdImage", "IsDriver", "VehicleNumber", "VehicleType",
+					"IsHome", "FamilyCount", "IsBusiness", "BusinessName", "BusinessFile").
+				Updates(user.Consumer).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (u *userRepo) GetUserById(c context.Context, id string) (*entities.User, error) {
