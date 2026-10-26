@@ -3,10 +3,10 @@ package redisKeys
 import "fmt"
 
 const (
-	OtpCode        = "otp:code:%d"
-	OtpDailyLimit  = "otp:daily_limit:%d"
-	OtpCooldown    = "otp:cooldown:%d"
-	OtpVerifyLimit = "otp:verify:%d"
+	OtpCode        = "otp:code:%s"
+	OtpDailyLimit  = "otp:daily_limit:%s"
+	OtpCooldown    = "otp:cooldown:%s"
+	OtpVerifyLimit = "otp:verify:%s"
 )
 
 func BuildOtpKey(key string, phone string) string {
