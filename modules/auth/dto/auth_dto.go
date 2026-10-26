@@ -5,6 +5,11 @@ import (
 	"github.com/najm-x/nova/pkg/respons"
 )
 
+type VerifyPhoneRequest struct {
+	Phone string `json:"phone" binding:"required,min=9,max=20"`
+	Code  string `json:"code" binding:"required,len=6,numeric"`
+}
+
 var (
 	// 409 Conflict - الرقم مسجل مسبقاً (تم تصحيحها من 404 إلى 409)
 	ErrPhoneAlreadyExists = &respons.AppError{
@@ -75,3 +80,12 @@ var (
 		Message: "internal server error, please try again later",
 	}
 )
+
+// NewInvalidProfileField builds a 400 error describing which field is missing/invalid.
+func NewInvalidProfileField(message string) *respons.AppError {
+	return &respons.AppError{
+		Status:  400,
+		Code:    errsCode.ErrInvalidProfileField,
+		Message: message,
+	}
+}

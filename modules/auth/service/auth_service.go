@@ -35,6 +35,10 @@ func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateUser
 		return nil, dto.ErrMissingProfileData
 	}
 
+	if err := validateConsumerProfile(req.Consumer); err != nil {
+		return nil, err
+	}
+
 	if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
 		return nil, dto.ErrPhoneAlreadyExists
 	}
