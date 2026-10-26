@@ -6,12 +6,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
+	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
+	"github.com/najm-x/nova/pkg/respons"
 )
 
 var (
-	ErrPhoneAlreadyExists = errors.New("phone number is already registered")
+	ErrPhoneAlreadyExists = &respons.AppError{Status: 404, Code: errsCode.ErrPhoneAlreadyExists, Message: "phone number is already registered"}
 	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidProfileType = errors.New("user cannot be both provider and consumer at the same time")
+	ErrSendSMS            = errors.New("we can't send OTP to this number")
+	ErrPhoneNotFound      = errors.New("this account not found")
+	ErrAcountNotActive    = errors.New("")
+	ErrAcountNotVerify    = errors.New("")
 )
 
 type CreateUserRequest struct {
@@ -45,7 +51,10 @@ type CreateConsumerRequest struct {
 	BusinessName *string `json:"business_name,omitempty" binding:"omitempty,max=200"`
 	BusinessFile *string `json:"business_file,omitempty" binding:"omitempty,max=500"`
 }
-
+type UserLoginRequest struct {
+	Phone    string `json:"phone" binding:"required,min=9,max=20"`
+	Password string `json:"password" binding:"required,min=8,max=255"`
+}
 type UpdateUserRequest struct {
 	Phone      *string                `json:"phone,omitempty" binding:"omitempty,min=9,max=20"`
 	IsVerified *bool                  `json:"is_verified,omitempty"`
@@ -112,8 +121,8 @@ type ConsumerResponse struct {
 	BusinessFile  *string   `json:"business_file,omitempty"`
 }
 
-func ToUserResponse(user *entities.User) UserResponse {
-	return UserResponse{
+func ToUserResponse(user *entities.User) *UserResponse {
+	return &UserResponse{
 		ID:         user.ID,
 		Phone:      user.Phone,
 		IsVerified: user.IsVerified,
@@ -128,6 +137,9 @@ func ToUserResponse(user *entities.User) UserResponse {
 }
 
 func ToProviderResponse(user *entities.Provider) *ProviderResponse {
+	if user == nil {
+		return nil
+	}
 	return &ProviderResponse{
 		UserID:      user.UserID,
 		Name:        user.Name,
@@ -137,6 +149,9 @@ func ToProviderResponse(user *entities.Provider) *ProviderResponse {
 	}
 }
 func ToConsumerResponse(user *entities.Consumer) *ConsumerResponse {
+	if user == nil {
+		return nil
+	}
 	return &ConsumerResponse{
 		UserID:        user.UserID,
 		Name:          user.Name,
