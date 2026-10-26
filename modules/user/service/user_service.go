@@ -28,10 +28,8 @@ func NewUserService(userRepo repo.UserRepo) UserService {
 	}
 }
 
-
-// 2. تحديث بيانات المستخدم
 func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponse, error) {
-	// جلب المستخدم أولاً للتأكد من وجوده
+
 	existingUser, err := s.userRepo.GetUserById(c, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -40,9 +38,8 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		return nil, err
 	}
 
-	// تحديث الحقول التي تم إرسالها فقط
 	if req.Phone != nil && *req.Phone != existingUser.Phone {
-		// التأكد أن الرقم الجديد غير مستخدم من شخص آخر
+
 		if _, err := s.userRepo.GetUserByPhone(c, *req.Phone); err == nil {
 			return nil, dto.ErrPhoneAlreadyExists
 		}
@@ -59,7 +56,6 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		existingUser.RoleID = *req.RoleID
 	}
 
-	// تحديث بيانات الـ Provider إن وجدت
 	if req.Provider != nil && existingUser.Provider != nil {
 		if req.Provider.Name != nil {
 			existingUser.Provider.Name = *req.Provider.Name

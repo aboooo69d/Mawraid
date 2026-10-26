@@ -1,7 +1,6 @@
 package dto
 
 import (
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,13 +10,16 @@ import (
 )
 
 var (
-	ErrPhoneAlreadyExists = &respons.AppError{Status: 404, Code: errsCode.ErrPhoneAlreadyExists, Message: "phone number is already registered"}
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidProfileType = errors.New("user cannot be both provider and consumer at the same time")
-	ErrSendSMS            = errors.New("we can't send OTP to this number")
-	ErrPhoneNotFound      = errors.New("this account not found")
-	ErrAcountNotActive    = errors.New("")
-	ErrAcountNotVerify    = errors.New("")
+	ErrPhoneAlreadyExists = &respons.AppError{
+		Status:  404,
+		Code:    errsCode.ErrPhoneAlreadyExists,
+		Message: "phone number is already registered",
+	}
+	ErrUserNotFound       = &respons.AppError{Status: 404, Code: errsCode.ErrUserNotFound, Message: "user not found"}
+	ErrInvalidProfileType = &respons.AppError{Status: 400, Code: errsCode.ErrInvalidProfileType, Message: "user cannot be both provider and consumer at the same time"}
+	ErrPhoneNotFound      = &respons.AppError{Status: 404, Code: errsCode.ErrPhoneNotFound, Message: "this account not found"}
+	ErrAcountNotActive    = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotActive, Message: "account is not active"}
+	ErrAcountNotVerify    = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotVerify, Message: "account is not verified"}
 )
 
 type CreateUserRequest struct {
