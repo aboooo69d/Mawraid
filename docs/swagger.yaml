@@ -1,0 +1,411 @@
+basePath: /api/v1
+definitions:
+  dto.ConsumerResponse:
+    properties:
+      business_file:
+        type: string
+      business_name:
+        type: string
+      family_count:
+        type: integer
+      id_image:
+        type: string
+      id_number:
+        type: string
+      is_business:
+        type: boolean
+      is_driver:
+        type: boolean
+      is_home:
+        type: boolean
+      name:
+        type: string
+      user_id:
+        type: string
+      vehicle_number:
+        type: string
+      vehicle_type:
+        type: string
+    type: object
+  dto.CreateConsumerRequest:
+    properties:
+      business_file:
+        maxLength: 500
+        type: string
+      business_name:
+        maxLength: 200
+        type: string
+      family_count:
+        minimum: 1
+        type: integer
+      id_image:
+        maxLength: 500
+        type: string
+      id_number:
+        maxLength: 50
+        type: string
+      is_business:
+        type: boolean
+      is_driver:
+        type: boolean
+      is_home:
+        type: boolean
+      name:
+        maxLength: 250
+        type: string
+      vehicle_number:
+        maxLength: 50
+        type: string
+      vehicle_type:
+        maxLength: 50
+        type: string
+    required:
+    - id_number
+    - name
+    type: object
+  dto.CreateProviderRequest:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      end_at:
+        type: string
+      name:
+        maxLength: 250
+        type: string
+      start_at:
+        type: string
+    required:
+    - end_at
+    - name
+    - start_at
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      consumer:
+        $ref: '#/definitions/dto.CreateConsumerRequest'
+      password:
+        maxLength: 255
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 9
+        type: string
+      provider:
+        $ref: '#/definitions/dto.CreateProviderRequest'
+    required:
+    - password
+    - phone
+    type: object
+  dto.ProviderResponse:
+    properties:
+      description:
+        type: string
+      end_at:
+        type: string
+      name:
+        type: string
+      start_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.UserLoginRequest:
+    properties:
+      password:
+        maxLength: 255
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 9
+        type: string
+    required:
+    - password
+    - phone
+    type: object
+  dto.UserResponse:
+    properties:
+      consumer:
+        $ref: '#/definitions/dto.ConsumerResponse'
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      is_verified:
+        type: boolean
+      phone:
+        type: string
+      provider:
+        $ref: '#/definitions/dto.ProviderResponse'
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.VerifyPhoneRequest:
+    properties:
+      code:
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 9
+        type: string
+    required:
+    - code
+    - phone
+    type: object
+  respons.ErrorResponse:
+    properties:
+      code:
+        example: 1001
+        type: integer
+      message:
+        example: error description
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  respons.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        example: operation completed successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@nova.local
+    name: Nova API Support
+  description: Backend REST API for Nova platform with Go, Gin, PostgreSQL, and Redis.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Nova API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with phone and password.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged in successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "403":
+          description: Account not verified or not active
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/register/consumer:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Register a new consumer profile with encrypted id_image and optional
+        business_file uploads.
+      parameters:
+      - description: Phone number (min 9, max 20)
+        in: formData
+        name: phone
+        required: true
+        type: string
+      - description: Password (min 8, max 255)
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Consumer full name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: National ID or civil number
+        in: formData
+        name: id_number
+        required: true
+        type: string
+      - description: ID card photo (jpeg/png/webp, max 5MB)
+        in: formData
+        name: id_image
+        required: true
+        type: file
+      - description: Is consumer a driver
+        in: formData
+        name: is_driver
+        type: boolean
+      - description: Vehicle plate number (required if is_driver is true)
+        in: formData
+        name: vehicle_number
+        type: string
+      - description: Vehicle type (required if is_driver is true)
+        in: formData
+        name: vehicle_type
+        type: string
+      - description: Is consumer a home/family head
+        in: formData
+        name: is_home
+        type: boolean
+      - description: Family count (>= 1, required if is_home is true)
+        in: formData
+        name: family_count
+        type: integer
+      - description: Is consumer a business
+        in: formData
+        name: is_business
+        type: boolean
+      - description: Business name (required if is_business is true)
+        in: formData
+        name: business_name
+        type: string
+      - description: Commercial registry or license file (required if is_business
+          is true)
+        in: formData
+        name: business_file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registered successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "409":
+          description: Phone number already registered
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+      summary: Register a new consumer
+      tags:
+      - Auth
+  /auth/register/provider:
+    post:
+      consumes:
+      - application/json
+      description: Register a new service provider profile.
+      parameters:
+      - description: Provider registration request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registered successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request or missing profile data
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "409":
+          description: Phone number already registered
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+      summary: Register a new provider
+      tags:
+      - Auth
+  /auth/verify-phone:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the phone number using the 6-digit OTP code sent after
+        registration.
+      parameters:
+      - description: Phone and 6-digit OTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyPhoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Phone verified successfully
+          schema:
+            $ref: '#/definitions/respons.SuccessResponse'
+        "400":
+          description: Invalid request or invalid OTP code
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "409":
+          description: Account is already verified
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+        "429":
+          description: Rate limit exceeded (cooldown / max attempts)
+          schema:
+            $ref: '#/definitions/respons.ErrorResponse'
+      summary: Verify phone with OTP
+      tags:
+      - Auth
+swagger: "2.0"

@@ -1,0 +1,615 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Backend REST API for Nova platform with Go, Gin, PostgreSQL, and Redis.",
+        "title": "Nova API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Nova API Support",
+            "email": "support@nova.local"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user with phone and password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login user",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logged in successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UserResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Account not verified or not active",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Account not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register/consumer": {
+            "post": {
+                "description": "Register a new consumer profile with encrypted id_image and optional business_file uploads.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new consumer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Phone number (min 9, max 20)",
+                        "name": "phone",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password (min 8, max 255)",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Consumer full name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "National ID or civil number",
+                        "name": "id_number",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "ID card photo (jpeg/png/webp, max 5MB)",
+                        "name": "id_image",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is consumer a driver",
+                        "name": "is_driver",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Vehicle plate number (required if is_driver is true)",
+                        "name": "vehicle_number",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Vehicle type (required if is_driver is true)",
+                        "name": "vehicle_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is consumer a home/family head",
+                        "name": "is_home",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Family count (\u003e= 1, required if is_home is true)",
+                        "name": "family_count",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is consumer a business",
+                        "name": "is_business",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Business name (required if is_business is true)",
+                        "name": "business_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Commercial registry or license file (required if is_business is true)",
+                        "name": "business_file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Registered successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UserResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Phone number already registered",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register/provider": {
+            "post": {
+                "description": "Register a new service provider profile.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new provider",
+                "parameters": [
+                    {
+                        "description": "Provider registration request payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Registered successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UserResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or missing profile data",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Phone number already registered",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify-phone": {
+            "post": {
+                "description": "Verifies the phone number using the 6-digit OTP code sent after registration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify phone with OTP",
+                "parameters": [
+                    {
+                        "description": "Phone and 6-digit OTP code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyPhoneRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Phone verified successfully",
+                        "schema": {
+                            "$ref": "#/definitions/respons.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or invalid OTP code",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Account not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Account is already verified",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded (cooldown / max attempts)",
+                        "schema": {
+                            "$ref": "#/definitions/respons.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.ConsumerResponse": {
+            "type": "object",
+            "properties": {
+                "business_file": {
+                    "type": "string"
+                },
+                "business_name": {
+                    "type": "string"
+                },
+                "family_count": {
+                    "type": "integer"
+                },
+                "id_image": {
+                    "type": "string"
+                },
+                "id_number": {
+                    "type": "string"
+                },
+                "is_business": {
+                    "type": "boolean"
+                },
+                "is_driver": {
+                    "type": "boolean"
+                },
+                "is_home": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "vehicle_number": {
+                    "type": "string"
+                },
+                "vehicle_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateConsumerRequest": {
+            "type": "object",
+            "required": [
+                "id_number",
+                "name"
+            ],
+            "properties": {
+                "business_file": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "business_name": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "family_count": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "id_image": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "id_number": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "is_business": {
+                    "type": "boolean"
+                },
+                "is_driver": {
+                    "type": "boolean"
+                },
+                "is_home": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 250
+                },
+                "vehicle_number": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "vehicle_type": {
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "dto.CreateProviderRequest": {
+            "type": "object",
+            "required": [
+                "end_at",
+                "name",
+                "start_at"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 250
+                },
+                "start_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "phone"
+            ],
+            "properties": {
+                "consumer": {
+                    "$ref": "#/definitions/dto.CreateConsumerRequest"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 9
+                },
+                "provider": {
+                    "$ref": "#/definitions/dto.CreateProviderRequest"
+                }
+            }
+        },
+        "dto.ProviderResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserLoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "phone"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 9
+                }
+            }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "consumer": {
+                    "$ref": "#/definitions/dto.ConsumerResponse"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "provider": {
+                    "$ref": "#/definitions/dto.ProviderResponse"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VerifyPhoneRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "phone"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 9
+                }
+            }
+        },
+        "respons.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "message": {
+                    "type": "string",
+                    "example": "error description"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "respons.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string",
+                    "example": "operation completed successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        }
+    }
+}
