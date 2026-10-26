@@ -11,8 +11,8 @@ type (
 	UserRepo interface {
 		CreateUser(c context.Context, user *entities.User) error
 		UpdateUser(c context.Context, id string, user *entities.User) error
-		GetUserById(c context.Context, id string) (entities.User, error)
-		GetUserByPhone(c context.Context, phone string) (entities.User, error)
+		GetUserById(c context.Context, id string) (*entities.User, error)
+		GetUserByPhone(c context.Context, phone string) (*entities.User, error)
 		GetAllUsers(c context.Context, limit int, offset int) ([]entities.User, error)
 		DeleteUser(c context.Context, id string) error
 	}
@@ -27,7 +27,10 @@ func NewUserRepo(db *gorm.DB) UserRepo {
 }
 
 func (u *userRepo) CreateUser(c context.Context, user *entities.User) error {
-	return gorm.G[entities.User](u.db).Create(c, user)
+	if err := gorm.G[entities.User](u.db).Create(c, user); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *userRepo) UpdateUser(c context.Context, id string, user *entities.User) error {
@@ -41,22 +44,24 @@ func (u *userRepo) UpdateUser(c context.Context, id string, user *entities.User)
 	return nil
 }
 
-func (u *userRepo) GetUserById(c context.Context, id string) (entities.User, error) {
-	return gorm.G[entities.User](u.db).
+func (u *userRepo) GetUserById(c context.Context, id string) (*entities.User, error) {
+	user, err := gorm.G[entities.User](u.db).
 		Preload("Role", nil).
 		Preload("Provider", nil).
 		Preload("Consumer", nil).
 		Where("id = ?", id).
 		First(c)
+	return &user, err
 }
 
-func (u *userRepo) GetUserByPhone(c context.Context, phone string) (entities.User, error) {
-	return gorm.G[entities.User](u.db).
+func (u *userRepo) GetUserByPhone(c context.Context, phone string) (*entities.User, error) {
+	user, err := gorm.G[entities.User](u.db).
 		Preload("Role", nil).
 		Preload("Provider", nil).
 		Preload("Consumer", nil).
 		Where("phone = ?", phone).
 		First(c)
+	return &user, err
 }
 
 func (u *userRepo) GetAllUsers(c context.Context, limit int, offset int) ([]entities.User, error) {
