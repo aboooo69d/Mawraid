@@ -39,8 +39,8 @@ type Consumer struct {
 	VehicleNumber *string `gorm:"type:varchar(50)" json:"vehicle_number,omitempty"`
 	VehicleType   *string `gorm:"type:varchar(50)" json:"vehicle_type,omitempty"`
 
-	IsHome      bool  `gorm:"default:false" json:"is_home"`
-	FamilyCount *int8 `json:"family_count,omitempty"`
+	IsHome      bool `gorm:"default:false" json:"is_home"`
+	FamilyCount *int `json:"family_count,omitempty"`
 
 	IsBusiness   bool    `gorm:"default:false" json:"is_business"`
 	BusinessName *string `gorm:"type:varchar(200)" json:"business_name,omitempty"`
