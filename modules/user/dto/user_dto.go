@@ -22,6 +22,10 @@ var (
 	ErrAcountNotVerify    = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotVerify, Message: "account is not verified"}
 )
 
+type UserBase struct {
+	Phone    string `json:"phone" binding:"required,yemen_phone"`
+	Password string `json:"password" binding:"required,min=8,max=255"`
+}
 type CreateUserRequest struct {
 	Phone    string                 `json:"phone" binding:"required,min=9,max=20"`
 	Password string                 `json:"password" binding:"required,min=8,max=255"`
@@ -30,33 +34,36 @@ type CreateUserRequest struct {
 }
 
 type CreateProviderRequest struct {
-	Name        string    `json:"name" binding:"required,max=250"`
+	UserBase
+	Name        string    `json:"name" binding:"required,min=10,max=50"`
 	Description string    `json:"description" binding:"max=1000"`
 	StartAt     time.Time `json:"start_at" binding:"required"`
 	EndAt       time.Time `json:"end_at" binding:"required,gtfield=StartAt"`
 }
 
 type CreateConsumerRequest struct {
-	Name     string `json:"name" binding:"required,max=250"`
-	IdNumber string `json:"id_number" binding:"required,max=50"`
+	UserBase
+	Name     string `json:"name" binding:"required,min=10,max=50"`
+	IdNumber string `json:"id_number" binding:"required,min=9,max=20"`
 	IdImage  string `json:"id_image" binding:"omitempty,max=500"`
 
 	IsDriver      bool    `json:"is_driver"`
-	VehicleNumber *string `json:"vehicle_number,omitempty" binding:"omitempty,max=50"`
-	VehicleType   *string `json:"vehicle_type,omitempty" binding:"omitempty,max=50"`
+	VehicleNumber *string `json:"vehicle_number,omitempty" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
+	VehicleType   *string `json:"vehicle_type,omitempty" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
 
-	IsHome      bool  `json:"is_home"`
-	FamilyCount *int8 `json:"family_count,omitempty" binding:"omitempty,min=1"`
+	IsHome      bool `json:"is_home"`
+	FamilyCount *int `json:"family_count,omitempty" binding:"required_if=IsHome true,omitempty,min=1,max=50"`
 
 	IsBusiness   bool    `json:"is_business"`
-	BusinessName *string `json:"business_name,omitempty" binding:"omitempty,max=200"`
-	BusinessFile *string `json:"business_file,omitempty" binding:"omitempty,max=500"`
+	BusinessName *string `json:"business_name,omitempty" binding:"required_if=IsBusiness true,omitempty,min=2,max=200"`
+	BusinessFile *string `json:"business_file,omitempty" binding:"required_if=IsBusiness true,omitempty,max=500"`
 }
 type UserLoginRequest struct {
 	Phone    string `json:"phone" binding:"required,min=9,max=20"`
 	Password string `json:"password" binding:"required,min=8,max=255"`
 }
 type UpdateUserRequest struct {
+	UserBase
 	Phone      *string                `json:"phone,omitempty" binding:"omitempty,min=9,max=20"`
 	IsVerified *bool                  `json:"is_verified,omitempty"`
 	IsActive   *bool                  `json:"is_active,omitempty"`
@@ -80,27 +87,25 @@ type UpdateConsumerRequest struct {
 	VehicleNumber *string `json:"vehicle_number,omitempty" binding:"omitempty,max=50"`
 	VehicleType   *string `json:"vehicle_type,omitempty" binding:"omitempty,max=50"`
 	IsHome        *bool   `json:"is_home,omitempty"`
-	FamilyCount   *int8   `json:"family_count,omitempty"`
+	FamilyCount   *int    `json:"family_count,omitempty"`
 	IsBusiness    *bool   `json:"is_business,omitempty"`
 	BusinessName  *string `json:"business_name,omitempty" binding:"omitempty,max=200"`
 	BusinessFile  *string `json:"business_file,omitempty" binding:"omitempty,max=500"`
 }
 
-type UserResponse struct {
-	ID         uuid.UUID         `json:"id"`
-	Phone      string            `json:"phone"`
-	IsVerified bool              `json:"is_verified"`
-	IsActive   bool              `json:"is_active"`
-	RoleID     uint              `json:"role_id"`
-	RoleName   string            `json:"role_name,omitempty"`
-	Provider   *ProviderResponse `json:"provider,omitempty"`
-	Consumer   *ConsumerResponse `json:"consumer,omitempty"`
-	CreatedAt  time.Time         `json:"created_at"`
-	UpdatedAt  time.Time         `json:"updated_at"`
+type UserResponseBase struct {
+	ID         uuid.UUID `json:"id"`
+	Phone      string    `json:"phone"`
+	IsVerified bool      `json:"is_verified"`
+	IsActive   bool      `json:"is_active"`
+	RoleID     uint      `json:"role_id"`
+	RoleName   string    `json:"role_name,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type ProviderResponse struct {
-	UserID      uuid.UUID `json:"user_id"`
+	UserResponseBase
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	StartAt     time.Time `json:"start_at"`
@@ -108,63 +113,55 @@ type ProviderResponse struct {
 }
 
 type ConsumerResponse struct {
-	UserID        uuid.UUID `json:"user_id"`
-	Name          string    `json:"name"`
-	IdNumber      string    `json:"id_number"`
-	IdImage       string    `json:"id_image,omitempty"`
-	IsDriver      bool      `json:"is_driver"`
-	VehicleNumber *string   `json:"vehicle_number,omitempty"`
-	VehicleType   *string   `json:"vehicle_type,omitempty"`
-	IsHome        bool      `json:"is_home"`
-	FamilyCount   *int8     `json:"family_count,omitempty"`
-	IsBusiness    bool      `json:"is_business"`
-	BusinessName  *string   `json:"business_name,omitempty"`
-	BusinessFile  *string   `json:"business_file,omitempty"`
+	UserResponseBase
+	Name          string  `json:"name"`
+	IdNumber      string  `json:"id_number"`
+	IdImage       string  `json:"id_image,omitempty"`
+	IsDriver      bool    `json:"is_driver"`
+	VehicleNumber *string `json:"vehicle_number,omitempty"`
+	VehicleType   *string `json:"vehicle_type,omitempty"`
+	IsHome        bool    `json:"is_home"`
+	FamilyCount   *int    `json:"family_count,omitempty"`
+	IsBusiness    bool    `json:"is_business"`
+	BusinessName  *string `json:"business_name,omitempty"`
+	BusinessFile  *string `json:"business_file,omitempty"`
 }
 
-func ToUserResponse(user *entities.User) *UserResponse {
-	return &UserResponse{
+func ToUserResponse(user *entities.User) *UserResponseBase {
+	return &UserResponseBase{
 		ID:         user.ID,
 		Phone:      user.Phone,
 		IsVerified: user.IsVerified,
 		IsActive:   user.IsActive,
 		RoleID:     user.RoleID,
 		RoleName:   user.Role.Name,
-		Provider:   ToProviderResponse(user.Provider),
-		Consumer:   ToConsumerResponse(user.Consumer),
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}
 }
 
-func ToProviderResponse(user *entities.Provider) *ProviderResponse {
-	if user == nil {
-		return nil
-	}
+func ToProviderResponse(user *entities.User) *ProviderResponse {
 	return &ProviderResponse{
-		UserID:      user.UserID,
-		Name:        user.Name,
-		Description: user.Description,
-		StartAt:     user.StartAt,
-		EndAt:       user.EndAt,
+		UserResponseBase: *ToUserResponse(user),
+		Name:             user.Provider.Name,
+		Description:      user.Provider.Description,
+		StartAt:          user.Provider.StartAt,
+		EndAt:            user.Provider.EndAt,
 	}
 }
-func ToConsumerResponse(user *entities.Consumer) *ConsumerResponse {
-	if user == nil {
-		return nil
-	}
+func ToConsumerResponse(user *entities.User) *ConsumerResponse {
 	return &ConsumerResponse{
-		UserID:        user.UserID,
-		Name:          user.Name,
-		IdNumber:      user.IdNumber,
-		IdImage:       user.IdImage,
-		IsDriver:      user.IsDriver,
-		VehicleNumber: user.VehicleNumber,
-		VehicleType:   user.VehicleType,
-		IsHome:        user.IsHome,
-		FamilyCount:   user.FamilyCount,
-		IsBusiness:    user.IsBusiness,
-		BusinessName:  user.BusinessName,
-		BusinessFile:  user.BusinessFile,
+		UserResponseBase: *ToUserResponse(user),
+		Name:             user.Consumer.Name,
+		IdNumber:         user.Consumer.IdNumber,
+		IdImage:          user.Consumer.IdImage,
+		IsDriver:         user.Consumer.IsDriver,
+		VehicleNumber:    user.Consumer.VehicleNumber,
+		VehicleType:      user.Consumer.VehicleType,
+		IsHome:           user.Consumer.IsHome,
+		FamilyCount:      user.Consumer.FamilyCount,
+		IsBusiness:       user.Consumer.IsBusiness,
+		BusinessName:     user.Consumer.BusinessName,
+		BusinessFile:     user.Consumer.BusinessFile,
 	}
 }
