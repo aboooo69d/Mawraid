@@ -7,11 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/modules/auth/dto"
+	authDto "github.com/najm-x/nova/modules/auth/dto"
 	"github.com/najm-x/nova/modules/auth/service"
 	userDto "github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/pkg/respons"
 	"github.com/najm-x/nova/pkg/storage"
 )
+
+var _ = authDto.ErrAccountAlreadyVerified
 
 type AuthHandler struct {
 	authService service.AuthService
@@ -19,6 +22,7 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(authService service.AuthService, uploader *storage.SecureUploader) *AuthHandler {
+
 	return &AuthHandler{authService: authService, uploader: uploader}
 }
 
@@ -34,8 +38,8 @@ type RegisterConsumerForm struct {
 	VehicleNumber *string `form:"vehicle_number" binding:"omitempty,max=50"`
 	VehicleType   *string `form:"vehicle_type" binding:"omitempty,max=50"`
 
-	IsHome      bool  `form:"is_home"`
-	FamilyCount *int8 `form:"family_count" binding:"omitempty,min=1"`
+	IsHome      bool `form:"is_home"`
+	FamilyCount *int `form:"family_count" binding:"omitempty,min=1"`
 
 	IsBusiness   bool    `form:"is_business"`
 	BusinessName *string `form:"business_name" binding:"omitempty,max=200"`
@@ -60,10 +64,10 @@ type RegisterConsumerForm struct {
 // @Param        is_business    formData  bool    false  "Is consumer a business"
 // @Param        business_name  formData  string  false  "Business name (required if is_business is true)"
 // @Param        business_file  formData  file    false  "Commercial registry or license file (required if is_business is true)"
-// @Success      201            {object}  respons.SuccessResponse{data=dto.UserResponse}  "Registered successfully"
-// @Failure      400            {object}  respons.ErrorResponse  "Invalid request or validation error"
-// @Failure      409            {object}  respons.ErrorResponse  "Phone number already registered"
-// @Failure      500            {object}  respons.ErrorResponse  "Internal server error"
+// @Success      201            {object}  respons.Response{data=userDto.ConsumerResponse}  "Registered successfully"
+// @Failure      400            {object}  respons.Response  "Invalid request or validation error"
+// @Failure      409            {object}  respons.Response  "Phone number already registered"
+// @Failure      500            {object}  respons.Response  "Internal server error"
 // @Router       /auth/register/consumer [post]
 func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 2*storage.MaxFileSize+(1<<20))
@@ -100,6 +104,10 @@ func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 	uploaded = append(uploaded, idImageKey)
 
 	consumer := &userDto.CreateConsumerRequest{
+		UserBase: userDto.UserBase{
+			Phone:    form.Phone,
+			Password: form.Password,
+		},
 		Name:          form.Name,
 		IdNumber:      form.IdNumber,
 		IdImage:       idImageKey,
@@ -123,17 +131,13 @@ func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 		consumer.BusinessFile = &key
 	}
 
-	user, err := h.authService.RegisterConsumer(ctx, userDto.CreateUserRequest{
-		Phone:    form.Phone,
-		Password: form.Password,
-		Consumer: consumer,
-	})
+	user, err := h.authService.RegisterConsumer(ctx, *consumer)
 	if err != nil {
 		cleanup() // do not leave orphan files if registration failed
-		respons.Error(c, err)
+		respons.Fail(c, err.(*respons.AppError))
 		return
 	}
-	respons.Success(c, http.StatusCreated, user, "registered successfully, verification code sent")
+	respons.OK(c, user)
 }
 
 func handleUploadError(c *gin.Context, err error) {
@@ -143,7 +147,7 @@ func handleUploadError(c *gin.Context, err error) {
 		errors.Is(err, storage.ErrFileEmpty):
 		respons.BadRequest(c, err.Error())
 	default:
-		respons.Error(c, err) // generic 500, details not leaked
+		respons.Fail(c, err.(*respons.AppError)) // generic 500, details not leaked
 	}
 }
 
@@ -153,14 +157,14 @@ func handleUploadError(c *gin.Context, err error) {
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
-// @Param        request body      dto.CreateUserRequest  true  "Provider registration request payload"
-// @Success      201     {object}  respons.SuccessResponse{data=dto.UserResponse}  "Registered successfully"
-// @Failure      400     {object}  respons.ErrorResponse  "Invalid request or missing profile data"
-// @Failure      409     {object}  respons.ErrorResponse  "Phone number already registered"
-// @Failure      500     {object}  respons.ErrorResponse  "Internal server error"
+// @Param        request body      userDto.CreateProviderRequest  true  "Provider registration request payload"
+// @Success      201     {object}  respons.Response{data=userDto.ProviderResponse}  "Registered successfully"
+// @Failure      400     {object}  respons.Response  "Invalid request or missing profile data"
+// @Failure      409     {object}  respons.Response  "Phone number already registered"
+// @Failure      500     {object}  respons.Response  "Internal server error"
 // @Router       /auth/register/provider [post]
 func (h *AuthHandler) RegisterProvider(c *gin.Context) {
-	var req userDto.CreateUserRequest
+	var req userDto.CreateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respons.BadRequest(c, err.Error())
 		return
@@ -168,10 +172,10 @@ func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 
 	user, err := h.authService.RegisterProvider(c.Request.Context(), req)
 	if err != nil {
-		respons.Error(c, err)
+		respons.Fail(c, err.(*respons.AppError))
 		return
 	}
-	respons.Success(c, http.StatusCreated, user, "registered successfully, verification code sent")
+	respons.OK(c, user)
 }
 
 // Login godoc
@@ -180,12 +184,12 @@ func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
-// @Param        request body      dto.UserLoginRequest  true  "Login credentials"
-// @Success      200     {object}  respons.SuccessResponse{data=dto.UserResponse}  "Logged in successfully"
-// @Failure      400     {object}  respons.ErrorResponse  "Invalid request body"
-// @Failure      401     {object}  respons.ErrorResponse  "Invalid credentials"
-// @Failure      403     {object}  respons.ErrorResponse  "Account not verified or not active"
-// @Failure      404     {object}  respons.ErrorResponse  "Account not found"
+// @Param        request body      userDto.UserLoginRequest  true  "Login credentials"
+// @Success      200     {object}  respons.Response{data=userDto.UserResponseBase}  "Logged in successfully"
+// @Failure      400     {object}  respons.Response  "Invalid request body"
+// @Failure      401     {object}  respons.Response  "Invalid credentials"
+// @Failure      403     {object}  respons.Response  "Account not verified or not active"
+// @Failure      404     {object}  respons.Response  "Account not found"
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req userDto.UserLoginRequest
@@ -196,10 +200,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user, err := h.authService.Login(c.Request.Context(), req)
 	if err != nil {
-		respons.Error(c, err)
+		respons.Fail(c, err.(*respons.AppError))
 		return
 	}
-	respons.Success(c, http.StatusOK, user, "logged in successfully")
+	respons.OK(c, user)
 }
 
 // VerifyPhone godoc
@@ -209,11 +213,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body      dto.VerifyPhoneRequest  true  "Phone and 6-digit OTP code"
-// @Success      200     {object}  respons.SuccessResponse  "Phone verified successfully"
-// @Failure      400     {object}  respons.ErrorResponse  "Invalid request or invalid OTP code"
-// @Failure      404     {object}  respons.ErrorResponse  "Account not found"
-// @Failure      409     {object}  respons.ErrorResponse  "Account is already verified"
-// @Failure      429     {object}  respons.ErrorResponse  "Rate limit exceeded (cooldown / max attempts)"
+// @Success      200     {object}  respons.Response  "Phone verified successfully"
+// @Failure      400     {object}  respons.Response  "Invalid request or invalid OTP code"
+// @Failure      404     {object}  respons.Response  "Account not found"
+// @Failure      409     {object}  respons.Response  "Account is already verified"
+// @Failure      429     {object}  respons.Response  "Rate limit exceeded (cooldown / max attempts)"
 // @Router       /auth/verify-phone [post]
 func (h *AuthHandler) VerifyPhone(c *gin.Context) {
 	var req dto.VerifyPhoneRequest
@@ -223,8 +227,8 @@ func (h *AuthHandler) VerifyPhone(c *gin.Context) {
 	}
 
 	if err := h.authService.VerifyPhone(c.Request.Context(), req.Phone, req.Code); err != nil {
-		respons.Error(c, err)
+		respons.Fail(c, err.(*respons.AppError))
 		return
 	}
-	respons.Success(c, http.StatusOK, nil, "phone verified successfully")
+	respons.OK(c, nil)
 }
