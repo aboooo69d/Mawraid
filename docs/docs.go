@@ -43,7 +43,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserLoginRequest"
+                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.UserLoginRequest"
                         }
                     }
                 ],
@@ -53,13 +53,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserResponse"
+                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.UserResponseBase"
                                         }
                                     }
                                 }
@@ -69,25 +69,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "403": {
                         "description": "Account not verified or not active",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "404": {
                         "description": "Account not found",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     }
                 }
@@ -197,13 +197,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserResponse"
+                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.ConsumerResponse"
                                         }
                                     }
                                 }
@@ -213,19 +213,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request or validation error",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "409": {
                         "description": "Phone number already registered",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     }
                 }
@@ -251,7 +251,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateUserRequest"
+                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.CreateProviderRequest"
                         }
                     }
                 ],
@@ -261,13 +261,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/respons.SuccessResponse"
+                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserResponse"
+                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.ProviderResponse"
                                         }
                                     }
                                 }
@@ -277,19 +277,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request or missing profile data",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "409": {
                         "description": "Phone number already registered",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     }
                 }
@@ -315,7 +315,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.VerifyPhoneRequest"
+                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest"
                         }
                     }
                 ],
@@ -323,31 +323,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Phone verified successfully",
                         "schema": {
-                            "$ref": "#/definitions/respons.SuccessResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request or invalid OTP code",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "404": {
                         "description": "Account not found",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "409": {
                         "description": "Account is already verified",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     },
                     "429": {
                         "description": "Rate limit exceeded (cooldown / max attempts)",
                         "schema": {
-                            "$ref": "#/definitions/respons.ErrorResponse"
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
                     }
                 }
@@ -355,221 +355,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.ConsumerResponse": {
-            "type": "object",
-            "properties": {
-                "business_file": {
-                    "type": "string"
-                },
-                "business_name": {
-                    "type": "string"
-                },
-                "family_count": {
-                    "type": "integer"
-                },
-                "id_image": {
-                    "type": "string"
-                },
-                "id_number": {
-                    "type": "string"
-                },
-                "is_business": {
-                    "type": "boolean"
-                },
-                "is_driver": {
-                    "type": "boolean"
-                },
-                "is_home": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "vehicle_number": {
-                    "type": "string"
-                },
-                "vehicle_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.CreateConsumerRequest": {
-            "type": "object",
-            "required": [
-                "id_number",
-                "name"
-            ],
-            "properties": {
-                "business_file": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "business_name": {
-                    "type": "string",
-                    "maxLength": 200
-                },
-                "family_count": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "id_image": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "id_number": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "is_business": {
-                    "type": "boolean"
-                },
-                "is_driver": {
-                    "type": "boolean"
-                },
-                "is_home": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 250
-                },
-                "vehicle_number": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "vehicle_type": {
-                    "type": "string",
-                    "maxLength": 50
-                }
-            }
-        },
-        "dto.CreateProviderRequest": {
-            "type": "object",
-            "required": [
-                "end_at",
-                "name",
-                "start_at"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "end_at": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 250
-                },
-                "start_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "phone"
-            ],
-            "properties": {
-                "consumer": {
-                    "$ref": "#/definitions/dto.CreateConsumerRequest"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 8
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 9
-                },
-                "provider": {
-                    "$ref": "#/definitions/dto.CreateProviderRequest"
-                }
-            }
-        },
-        "dto.ProviderResponse": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "end_at": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "start_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserLoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "phone"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 8
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 9
-                }
-            }
-        },
-        "dto.UserResponse": {
-            "type": "object",
-            "properties": {
-                "consumer": {
-                    "$ref": "#/definitions/dto.ConsumerResponse"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "is_verified": {
-                    "type": "boolean"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "provider": {
-                    "$ref": "#/definitions/dto.ProviderResponse"
-                },
-                "role_id": {
-                    "type": "integer"
-                },
-                "role_name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.VerifyPhoneRequest": {
+        "github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -586,34 +372,232 @@ const docTemplate = `{
                 }
             }
         },
-        "respons.ErrorResponse": {
+        "github_com_najm-x_nova_modules_user_dto.ConsumerResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 1001
+                "business_file": {
+                    "type": "string"
                 },
-                "message": {
-                    "type": "string",
-                    "example": "error description"
+                "business_name": {
+                    "type": "string"
                 },
-                "success": {
-                    "type": "boolean",
-                    "example": false
+                "created_at": {
+                    "type": "string"
+                },
+                "family_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "id_image": {
+                    "type": "string"
+                },
+                "id_number": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_business": {
+                    "type": "boolean"
+                },
+                "is_driver": {
+                    "type": "boolean"
+                },
+                "is_home": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vehicle_number": {
+                    "type": "string"
+                },
+                "vehicle_type": {
+                    "type": "string"
                 }
             }
         },
-        "respons.SuccessResponse": {
+        "github_com_najm-x_nova_modules_user_dto.CreateProviderRequest": {
+            "type": "object",
+            "required": [
+                "end_at",
+                "name",
+                "password",
+                "phone",
+                "start_at"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 10
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_najm-x_nova_modules_user_dto.ProviderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_najm-x_nova_modules_user_dto.UserLoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "phone"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 9
+                }
+            }
+        },
+        "github_com_najm-x_nova_modules_user_dto.UserResponseBase": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_najm-x_nova_pkg_respons.AppError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_najm-x_nova_pkg_respons.Meta": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_najm-x_nova_pkg_respons.Response": {
             "type": "object",
             "properties": {
                 "data": {},
-                "message": {
-                    "type": "string",
-                    "example": "operation completed successfully"
+                "error": {
+                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.AppError"
+                },
+                "meta": {
+                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Meta"
                 },
                 "success": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 }
             }
         }
@@ -623,7 +607,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "rtkgcrck-8080.inc1.devtunnels.ms",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Nova API",

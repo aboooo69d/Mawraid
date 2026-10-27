@@ -1,154 +1,6 @@
 basePath: /api/v1
 definitions:
-  dto.ConsumerResponse:
-    properties:
-      business_file:
-        type: string
-      business_name:
-        type: string
-      family_count:
-        type: integer
-      id_image:
-        type: string
-      id_number:
-        type: string
-      is_business:
-        type: boolean
-      is_driver:
-        type: boolean
-      is_home:
-        type: boolean
-      name:
-        type: string
-      user_id:
-        type: string
-      vehicle_number:
-        type: string
-      vehicle_type:
-        type: string
-    type: object
-  dto.CreateConsumerRequest:
-    properties:
-      business_file:
-        maxLength: 500
-        type: string
-      business_name:
-        maxLength: 200
-        type: string
-      family_count:
-        minimum: 1
-        type: integer
-      id_image:
-        maxLength: 500
-        type: string
-      id_number:
-        maxLength: 50
-        type: string
-      is_business:
-        type: boolean
-      is_driver:
-        type: boolean
-      is_home:
-        type: boolean
-      name:
-        maxLength: 250
-        type: string
-      vehicle_number:
-        maxLength: 50
-        type: string
-      vehicle_type:
-        maxLength: 50
-        type: string
-    required:
-    - id_number
-    - name
-    type: object
-  dto.CreateProviderRequest:
-    properties:
-      description:
-        maxLength: 1000
-        type: string
-      end_at:
-        type: string
-      name:
-        maxLength: 250
-        type: string
-      start_at:
-        type: string
-    required:
-    - end_at
-    - name
-    - start_at
-    type: object
-  dto.CreateUserRequest:
-    properties:
-      consumer:
-        $ref: '#/definitions/dto.CreateConsumerRequest'
-      password:
-        maxLength: 255
-        minLength: 8
-        type: string
-      phone:
-        maxLength: 20
-        minLength: 9
-        type: string
-      provider:
-        $ref: '#/definitions/dto.CreateProviderRequest'
-    required:
-    - password
-    - phone
-    type: object
-  dto.ProviderResponse:
-    properties:
-      description:
-        type: string
-      end_at:
-        type: string
-      name:
-        type: string
-      start_at:
-        type: string
-      user_id:
-        type: string
-    type: object
-  dto.UserLoginRequest:
-    properties:
-      password:
-        maxLength: 255
-        minLength: 8
-        type: string
-      phone:
-        maxLength: 20
-        minLength: 9
-        type: string
-    required:
-    - password
-    - phone
-    type: object
-  dto.UserResponse:
-    properties:
-      consumer:
-        $ref: '#/definitions/dto.ConsumerResponse'
-      created_at:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      is_verified:
-        type: boolean
-      phone:
-        type: string
-      provider:
-        $ref: '#/definitions/dto.ProviderResponse'
-      role_id:
-        type: integer
-      role_name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  dto.VerifyPhoneRequest:
+  github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest:
     properties:
       code:
         type: string
@@ -160,29 +12,162 @@ definitions:
     - code
     - phone
     type: object
-  respons.ErrorResponse:
+  github_com_najm-x_nova_modules_user_dto.ConsumerResponse:
+    properties:
+      business_file:
+        type: string
+      business_name:
+        type: string
+      created_at:
+        type: string
+      family_count:
+        type: integer
+      id:
+        type: string
+      id_image:
+        type: string
+      id_number:
+        type: string
+      is_active:
+        type: boolean
+      is_business:
+        type: boolean
+      is_driver:
+        type: boolean
+      is_home:
+        type: boolean
+      is_verified:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      updated_at:
+        type: string
+      vehicle_number:
+        type: string
+      vehicle_type:
+        type: string
+    type: object
+  github_com_najm-x_nova_modules_user_dto.CreateProviderRequest:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      end_at:
+        type: string
+      name:
+        maxLength: 50
+        minLength: 10
+        type: string
+      password:
+        maxLength: 255
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      start_at:
+        type: string
+    required:
+    - end_at
+    - name
+    - password
+    - phone
+    - start_at
+    type: object
+  github_com_najm-x_nova_modules_user_dto.ProviderResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      end_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      is_verified:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      start_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_najm-x_nova_modules_user_dto.UserLoginRequest:
+    properties:
+      password:
+        maxLength: 255
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 9
+        type: string
+    required:
+    - password
+    - phone
+    type: object
+  github_com_najm-x_nova_modules_user_dto.UserResponseBase:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      is_verified:
+        type: boolean
+      phone:
+        type: string
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_najm-x_nova_pkg_respons.AppError:
     properties:
       code:
-        example: 1001
         type: integer
       message:
-        example: error description
         type: string
-      success:
-        example: false
-        type: boolean
     type: object
-  respons.SuccessResponse:
+  github_com_najm-x_nova_pkg_respons.Meta:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_najm-x_nova_pkg_respons.Response:
     properties:
       data: {}
-      message:
-        example: operation completed successfully
-        type: string
+      error:
+        $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.AppError'
+      meta:
+        $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Meta'
       success:
-        example: true
         type: boolean
     type: object
-host: localhost:8080
+host: rtkgcrck-8080.inc1.devtunnels.ms
 info:
   contact:
     email: support@nova.local
@@ -206,7 +191,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.UserLoginRequest'
+          $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.UserLoginRequest'
       produces:
       - application/json
       responses:
@@ -214,27 +199,27 @@ paths:
           description: Logged in successfully
           schema:
             allOf:
-            - $ref: '#/definitions/respons.SuccessResponse'
+            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.UserResponse'
+                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.UserResponseBase'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "403":
           description: Account not verified or not active
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "404":
           description: Account not found
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
       summary: Login user
       tags:
       - Auth
@@ -310,23 +295,23 @@ paths:
           description: Registered successfully
           schema:
             allOf:
-            - $ref: '#/definitions/respons.SuccessResponse'
+            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.UserResponse'
+                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.ConsumerResponse'
               type: object
         "400":
           description: Invalid request or validation error
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "409":
           description: Phone number already registered
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
       summary: Register a new consumer
       tags:
       - Auth
@@ -341,7 +326,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateUserRequest'
+          $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.CreateProviderRequest'
       produces:
       - application/json
       responses:
@@ -349,23 +334,23 @@ paths:
           description: Registered successfully
           schema:
             allOf:
-            - $ref: '#/definitions/respons.SuccessResponse'
+            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.UserResponse'
+                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.ProviderResponse'
               type: object
         "400":
           description: Invalid request or missing profile data
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "409":
           description: Phone number already registered
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
       summary: Register a new provider
       tags:
       - Auth
@@ -381,30 +366,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.VerifyPhoneRequest'
+          $ref: '#/definitions/github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Phone verified successfully
           schema:
-            $ref: '#/definitions/respons.SuccessResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "400":
           description: Invalid request or invalid OTP code
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "404":
           description: Account not found
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "409":
           description: Account is already verified
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
         "429":
           description: Rate limit exceeded (cooldown / max attempts)
           schema:
-            $ref: '#/definitions/respons.ErrorResponse'
+            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
       summary: Verify phone with OTP
       tags:
       - Auth
