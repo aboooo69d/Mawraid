@@ -19,4 +19,7 @@ const (
 	ErrVerifyLimitReached // 1014
 	ErrInvalidOtp
 	ErrInvalidProfileField
+	ErrFileTooLarge
+	ErrFileTypeInvalid
+	ErrFileEmpty
 )
