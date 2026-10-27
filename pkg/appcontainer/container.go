@@ -18,6 +18,7 @@ import (
 	"github.com/najm-x/nova/pkg/database"
 	smsSender "github.com/najm-x/nova/pkg/sms_sender"
 	"github.com/najm-x/nova/pkg/storage"
+	"github.com/najm-x/nova/pkg/validator"
 	"github.com/redis/go-redis/v9"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -51,6 +52,9 @@ type AppContainer struct {
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
 func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, error) {
+	// init validators
+	validator.Init()
+
 	// 1. Connect to PostgreSQL
 	db, err := database.NewPostgres(cfg.Database)
 	if err != nil {
