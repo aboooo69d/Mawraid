@@ -14,9 +14,9 @@ import (
 
 type (
 	AuthService interface {
-		RegisterConsumer(c context.Context, req userDto.CreateUserRequest) (*userDto.UserResponse, error)
-		RegisterProvider(c context.Context, req userDto.CreateUserRequest) (*userDto.UserResponse, error)
-		Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponse, error)
+		RegisterConsumer(c context.Context, req userDto.CreateConsumerRequest) (*userDto.ConsumerResponse, error)
+		RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error)
+		Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponseBase, error)
 		VerifyPhone(c context.Context, phone string, code string) error
 	}
 	authService struct {
@@ -26,18 +26,7 @@ type (
 	}
 )
 
-func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateUserRequest) (*userDto.UserResponse, error) {
-	if req.Consumer != nil && req.Provider != nil {
-		return nil, dto.ErrInvalidProfileType
-	}
-
-	if req.Consumer == nil {
-		return nil, dto.ErrMissingProfileData
-	}
-
-	if err := validateConsumerProfile(req.Consumer); err != nil {
-		return nil, err
-	}
+func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateConsumerRequest) (*userDto.ConsumerResponse, error) {
 
 	if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
 		return nil, dto.ErrPhoneAlreadyExists
@@ -63,17 +52,17 @@ func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateUser
 	}
 
 	newUser.Consumer = &entities.Consumer{
-		Name:          req.Consumer.Name,
-		IdNumber:      req.Consumer.IdNumber,
-		IdImage:       req.Consumer.IdImage,
-		IsDriver:      req.Consumer.IsDriver,
-		VehicleNumber: req.Consumer.VehicleNumber,
-		VehicleType:   req.Consumer.VehicleType,
-		IsHome:        req.Consumer.IsHome,
-		FamilyCount:   req.Consumer.FamilyCount,
-		IsBusiness:    req.Consumer.IsBusiness,
-		BusinessName:  req.Consumer.BusinessName,
-		BusinessFile:  req.Consumer.BusinessFile,
+		Name:          req.Name,
+		IdNumber:      req.IdNumber,
+		IdImage:       req.IdImage,
+		IsDriver:      req.IsDriver,
+		VehicleNumber: req.VehicleNumber,
+		VehicleType:   req.VehicleType,
+		IsHome:        req.IsHome,
+		FamilyCount:   req.FamilyCount,
+		IsBusiness:    req.IsBusiness,
+		BusinessName:  req.BusinessName,
+		BusinessFile:  req.BusinessFile,
 	}
 
 	if err := s.userRepo.CreateUser(c, &newUser); err != nil {
@@ -82,18 +71,10 @@ func (s *authService) RegisterConsumer(c context.Context, req userDto.CreateUser
 
 	go s.otpService.SendOtp(context.Background(), newUser.Phone)
 
-	return userDto.ToUserResponse(&newUser), nil
+	return userDto.ToConsumerResponse(&newUser), nil
 }
 
-func (s *authService) RegisterProvider(c context.Context, req userDto.CreateUserRequest) (*userDto.UserResponse, error) {
-
-	if req.Provider != nil && req.Consumer != nil {
-		return nil, dto.ErrInvalidProfileType
-	}
-
-	if req.Provider == nil {
-		return nil, dto.ErrMissingProfileData
-	}
+func (s *authService) RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error) {
 
 	if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
 		return nil, dto.ErrPhoneAlreadyExists
@@ -119,10 +100,10 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateUser
 	}
 
 	newUser.Provider = &entities.Provider{
-		Name:        req.Provider.Name,
-		Description: req.Provider.Description,
-		StartAt:     req.Provider.StartAt,
-		EndAt:       req.Provider.EndAt,
+		Name:        req.Name,
+		Description: req.Description,
+		StartAt:     req.StartAt,
+		EndAt:       req.EndAt,
 	}
 
 	if err := s.userRepo.CreateUser(c, &newUser); err != nil {
@@ -131,10 +112,10 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateUser
 
 	go s.otpService.SendOtp(context.Background(), newUser.Phone)
 
-	return userDto.ToUserResponse(&newUser), nil
+	return userDto.ToProviderResponse(&newUser), nil
 }
 
-func (s *authService) Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponse, error) {
+func (s *authService) Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponseBase, error) {
 	existingUser, err := s.userRepo.GetUserByPhone(c, req.Phone)
 	if err != nil {
 		return nil, dto.ErrPhoneNotFound
