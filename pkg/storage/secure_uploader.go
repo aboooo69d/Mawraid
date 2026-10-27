@@ -2,22 +2,37 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
+	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
 	"github.com/najm-x/nova/pkg/crypto"
+	"github.com/najm-x/nova/pkg/respons"
 )
 
 const MaxFileSize = 5 << 20 // 5MB
 
 var (
-	ErrFileTooLarge    = errors.New("file is too large (max 5MB)")
-	ErrFileTypeInvalid = errors.New("file type is not allowed")
-	ErrFileEmpty       = errors.New("file is empty")
+	ErrFileTypeInvalid = &respons.AppError{
+		Status:  400,
+		Code:    errsCode.ErrFileTypeInvalid,
+		Message: "file type is not allowed",
+	}
+	ErrFileEmpty = &respons.AppError{
+		Status:  400,
+		Code:    errsCode.ErrFileEmpty,
+		Message: "file is empty",
+	}
+
+	// 413 Payload Too Large - file size
+	ErrFileTooLarge = &respons.AppError{
+		Status:  413,
+		Code:    errsCode.ErrFileTooLarge,
+		Message: "file is too large (max 5MB)",
+	}
 )
 
 // Common allowed content types.
