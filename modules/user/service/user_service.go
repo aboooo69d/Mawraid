@@ -11,9 +11,9 @@ import (
 
 type (
 	UserService interface {
-		UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponse, error)
-		GetUserById(c context.Context, id string) (*dto.UserResponse, error)
-		GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponse, error)
+		UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponseBase, error)
+		GetUserById(c context.Context, id string) (*dto.UserResponseBase, error)
+		GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponseBase, error)
 		DeleteUser(c context.Context, id string) error
 	}
 
@@ -28,7 +28,7 @@ func NewUserService(userRepo repo.UserRepo) UserService {
 	}
 }
 
-func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponse, error) {
+func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUserRequest) (*dto.UserResponseBase, error) {
 
 	existingUser, err := s.userRepo.GetUserById(c, id)
 	if err != nil {
@@ -114,7 +114,7 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 	return dto.ToUserResponse(existingUser), nil
 }
 
-func (s *userService) GetUserById(c context.Context, id string) (*dto.UserResponse, error) {
+func (s *userService) GetUserById(c context.Context, id string) (*dto.UserResponseBase, error) {
 	user, err := s.userRepo.GetUserById(c, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -126,7 +126,7 @@ func (s *userService) GetUserById(c context.Context, id string) (*dto.UserRespon
 	return dto.ToUserResponse(user), nil
 }
 
-func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponse, error) {
+func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponseBase, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -140,7 +140,7 @@ func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]
 		return nil, err
 	}
 
-	responses := make([]dto.UserResponse, len(users))
+	responses := make([]dto.UserResponseBase, len(users))
 	for i := range users {
 		responses[i] = *dto.ToUserResponse(&users[i])
 	}
