@@ -16,9 +16,7 @@ type Response struct {
 // SuccessResponse defines standard success envelope for API docs and responses.
 
 // BadRequest writes a 400 response (e.g. for request binding/validation errors).
-func BadRequest(c *gin.Context, message string) {
-	c.AbortWithStatusJSON(http.StatusBadRequest, Response{Success: false, Error: &AppError{Message: "bad request"}})
-}
+var ErrBadRequest = &AppError{Status: http.StatusBadRequest, Code: 2000, Message: "bad request"}
 
 type Meta struct {
 	Page       int `json:"page,omitempty"`

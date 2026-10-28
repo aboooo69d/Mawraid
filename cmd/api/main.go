@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/config"
+	"github.com/najm-x/nova/middleware"
 	"github.com/najm-x/nova/pkg/appcontainer"
 )
 
@@ -54,7 +55,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 	r.Use(corsMiddleware())
-
+	r.Use(middleware.ErrorHandler())
 	// 5. Register application routes
 	container.RegisterRoutes(r)
 

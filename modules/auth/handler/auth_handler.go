@@ -75,13 +75,13 @@ func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 
 	var form RegisterConsumerForm
 	if err := c.ShouldBind(&form); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	idImage, err := c.FormFile("id_image")
 	if err != nil {
-		respons.BadRequest(c, "id_image file is required")
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 	businessFile, _ := c.FormFile("business_file")
@@ -135,7 +135,7 @@ func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 	user, err := h.authService.RegisterConsumer(ctx, *consumer)
 	if err != nil {
 		cleanup() // do not leave orphan files if registration failed
-		respons.Fail(c, err.(*respons.AppError))
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, user)
@@ -146,9 +146,9 @@ func handleUploadError(c *gin.Context, err error) {
 	case errors.Is(err, storage.ErrFileTooLarge),
 		errors.Is(err, storage.ErrFileTypeInvalid),
 		errors.Is(err, storage.ErrFileEmpty):
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(err)
 	default:
-		respons.Fail(c, err.(*respons.AppError)) // generic 500, details not leaked
+		_ = c.Error(err) // generic 500, details not leaked
 	}
 }
 
@@ -167,13 +167,13 @@ func handleUploadError(c *gin.Context, err error) {
 func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 	var req userDto.CreateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	user, err := h.authService.RegisterProvider(c.Request.Context(), req)
 	if err != nil {
-		respons.Fail(c, err.(*respons.AppError))
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, user)
@@ -195,13 +195,13 @@ func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req userDto.UserLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	user, err := h.authService.Login(c.Request.Context(), req)
 	if err != nil {
-		respons.Fail(c, err.(*respons.AppError))
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, user)
@@ -223,12 +223,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) VerifyPhone(c *gin.Context) {
 	var req dto.VerifyPhoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	if err := h.authService.VerifyPhone(c.Request.Context(), req.Phone, req.Code); err != nil {
-		respons.Fail(c, err.(*respons.AppError))
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, nil)
@@ -237,12 +237,12 @@ func (h *AuthHandler) VerifyPhone(c *gin.Context) {
 func (h *AuthHandler) ResendOtp(c *gin.Context) {
 	var req dto.ResendOtpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	if _, err := h.otpService.SendOtp(c.Request.Context(), req.Phone); err != nil {
-		respons.Fail(c, err.(*respons.AppError))
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, nil)
@@ -262,12 +262,12 @@ func (h *AuthHandler) ResendOtp(c *gin.Context) {
 func (h *AuthHandler) ForgetPassword(c *gin.Context) {
 	var req dto.ForgetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	if err := h.authService.ForgetPassword(c.Request.Context(), req.Phone); err != nil {
-		failWithAppError(c, err)
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, nil)
@@ -289,24 +289,13 @@ func (h *AuthHandler) ForgetPassword(c *gin.Context) {
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req dto.RestPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respons.BadRequest(c, err.Error())
+		_ = c.Error(respons.ErrBadRequest)
 		return
 	}
 
 	if err := h.authService.ResetPassword(c.Request.Context(), req); err != nil {
-		failWithAppError(c, err)
+		_ = c.Error(err)
 		return
 	}
 	respons.OK(c, nil)
-}
-
-// failWithAppError responds with the AppError if err is one, otherwise a generic 500.
-// ResetPassword can return raw redis/repo errors, so a plain type assertion would panic.
-func failWithAppError(c *gin.Context, err error) {
-	var appErr *respons.AppError
-	if errors.As(err, &appErr) {
-		respons.Fail(c, appErr)
-		return
-	}
-	respons.Fail(c, dto.ErrInternalServer)
 }
