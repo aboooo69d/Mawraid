@@ -223,7 +223,7 @@ func (s *authService) ResetPassword(c context.Context, req dto.RestPasswordReque
 		return err
 	}
 
-	user, err := s.userRepo.GetUserById(c, phone)
+	user, err := s.userRepo.GetUserByPhone(c, phone)
 	if err != nil {
 		return dto.ErrUserNotFound
 	}
