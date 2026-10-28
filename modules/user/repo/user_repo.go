@@ -38,7 +38,7 @@ func (u *userRepo) UpdateUser(c context.Context, id string, user *entities.User)
 		// Select(...) is required so zero values (false, 0, "") are written too.
 		res := tx.Model(&entities.User{}).
 			Where("id = ?", id).
-			Select("Phone", "Password", "IsVerified", "IsActive", "RoleID").
+			Select("Phone", "Password", "IsVerified", "Status", "RoleID").
 			Updates(&entities.User{
 				Phone:      user.Phone,
 				Password:   user.Password,
