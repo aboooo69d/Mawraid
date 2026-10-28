@@ -17,6 +17,7 @@ const (
 	ErrAccountDocs
 	ErrAccountRejected
 	ErrStatusSuspended
+	ErrInvalidResetKey
 	// أخطاء الـ OTP المضافة حديثاً
 	ErrCooldownActive     // 1012
 	ErrDailyLimitReached  // 1013

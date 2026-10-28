@@ -12,6 +12,13 @@ type VerifyPhoneRequest struct {
 type ResendOtpRequest struct {
 	Phone string `json:"phone" binding:"required,min=9,max=20"`
 }
+type RestPasswordRequest struct {
+	ResetKey string `json:"rest_key" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+type ForgetPasswordRequest struct {
+	Phone string `json:"phone" binding:"required,min=9,max=20"`
+}
 
 var (
 	// 409 Conflict - الرقم مسجل مسبقاً (تم تصحيحها من 404 إلى 409)
@@ -100,6 +107,11 @@ var (
 	StatusSuspended = &respons.AppError{
 		Status:  403,
 		Code:    errsCode.ErrStatusSuspended,
+		Message: "Acount is rejected",
+	}
+	ErrInvalidResetKey = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrInvalidResetKey,
 		Message: "Acount is rejected",
 	}
 )

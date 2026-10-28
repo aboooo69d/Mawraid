@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
@@ -9,7 +11,10 @@ import (
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	userDto "github.com/najm-x/nova/modules/user/dto"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
+	smsSender "github.com/najm-x/nova/pkg/sms_sender"
 	valueHashing "github.com/najm-x/nova/pkg/value_hashing"
+	"github.com/najm-x/nova/utils"
+	"github.com/redis/go-redis/v9"
 )
 
 type (
@@ -18,11 +23,15 @@ type (
 		RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error)
 		Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponseBase, error)
 		VerifyPhone(c context.Context, phone string, code string) error
+		ForgetPassword(c context.Context, phone string) error
+		ResetPassword(c context.Context, req dto.RestPasswordRequest) error
 	}
 	authService struct {
 		userRepo   userRepo.UserRepo
+		redis      *redis.Client
 		roleRepo   roleRepo.RoleRepo
 		otpService OtpService
+		sms        smsSender.Provider
 	}
 )
 
@@ -175,10 +184,78 @@ func (s *authService) VerifyPhone(c context.Context, phone string, code string) 
 	return nil
 }
 
-func NewAuthService(userRepo userRepo.UserRepo, roleRepo roleRepo.RoleRepo, otpService OtpService) AuthService {
+func (s *authService) ForgetPassword(c context.Context, phone string) error {
+	if code, err := s.redis.Get(c, "forget:"+phone).Result(); err == nil {
+		go s.sms.SendSMS(phone, "your repassword code is:"+code+"don't share it")
+		return nil
+	}
+	_, err := s.userRepo.GetUserByPhone(c, phone)
+	if err != nil {
+		return nil
+	}
+	code, codeErr := utils.GenerateSecureToken()
+
+	if codeErr != nil {
+		return dto.ErrInternalServer
+	}
+
+	pip := s.redis.Pipeline()
+	pip.Set(c, code, phone, 15*time.Minute)
+	pip.Set(c, "forget:"+phone, code, 15*time.Minute)
+
+	if _, err := pip.Exec(c); err != nil {
+		return dto.ErrInternalServer
+	}
+	go s.sms.SendSMS(phone, "your repassword code is:"+code+"don't share it")
+
+	return nil
+
+}
+
+func (s *authService) ResetPassword(c context.Context, req dto.RestPasswordRequest) error {
+	// 1. Validate reset key
+	phone, err := s.redis.Get(c, req.ResetKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return dto.ErrInvalidResetKey
+		}
+
+		return err
+	}
+
+	user, err := s.userRepo.GetUserById(c, phone)
+	if err != nil {
+		return dto.ErrUserNotFound
+	}
+
+	hashedPassword, err := valueHashing.HashValue(req.Password)
+	if err != nil {
+		return dto.ErrInternalServer
+	}
+
+	user.Password = hashedPassword
+
+	if err := s.userRepo.UpdateUser(
+		c,
+		user.ID.String(),
+		user,
+	); err != nil {
+		return err
+	}
+
+	if err := s.redis.Del(c, req.ResetKey).Err(); err != nil {
+		return dto.ErrInternalServer
+	}
+
+	return nil
+}
+
+func NewAuthService(userRepo userRepo.UserRepo, roleRepo roleRepo.RoleRepo, otpService OtpService, redis *redis.Client, sms smsSender.Provider) AuthService {
 	return &authService{
 		userRepo:   userRepo,
 		roleRepo:   roleRepo,
 		otpService: otpService,
+		redis:      redis,
+		sms:        sms,
 	}
 }
