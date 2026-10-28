@@ -13,6 +13,10 @@ const (
 	ErrAcountNotVerify
 	ErrAccountAlreadyVerified
 	ErrInternalServer
+	ErrAccountPending
+	ErrAccountDocs
+	ErrAccountRejected
+	ErrStatusSuspended
 	// أخطاء الـ OTP المضافة حديثاً
 	ErrCooldownActive     // 1012
 	ErrDailyLimitReached  // 1013

@@ -43,7 +43,7 @@ func (u *userRepo) UpdateUser(c context.Context, id string, user *entities.User)
 				Phone:      user.Phone,
 				Password:   user.Password,
 				IsVerified: user.IsVerified,
-				IsActive:   user.IsActive,
+				Status:     user.Status,
 				RoleID:     user.RoleID,
 			})
 		if res.Error != nil {

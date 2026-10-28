@@ -125,12 +125,28 @@ func (s *authService) Login(c context.Context, req userDto.UserLoginRequest) (*u
 		return nil, dto.ErrInvalidCredentials
 	}
 
-	if !existingUser.IsActive {
-		return nil, dto.ErrAcountNotActive
-	}
-
 	if !existingUser.IsVerified {
 		return nil, dto.ErrAcountNotVerify
+	}
+
+	if existingUser.Status == entities.StatusPending {
+		return nil, dto.ErrAccountPending
+	}
+
+	if existingUser.Status == entities.StatusDocs {
+		return nil, dto.ErrAccountDocs
+	}
+
+	if existingUser.Status == entities.StatusRejected {
+		return nil, dto.ErrAccountRejected
+	}
+
+	if existingUser.Status == entities.StatusSuspended {
+		return nil, dto.StatusSuspended
+	}
+
+	if existingUser.Status != entities.StatusActive {
+		return nil, dto.ErrAcountNotActive
 	}
 
 	return userDto.ToUserResponse(existingUser), nil

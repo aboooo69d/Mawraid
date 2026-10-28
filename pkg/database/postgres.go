@@ -44,6 +44,9 @@ func NewPostgres(cfg config.DatabaseConfig) (*gorm.DB, error) {
 
 // AutoMigrateAndSeed creates tables and ensures standard roles exist.
 func AutoMigrateAndSeed(db *gorm.DB) error {
+	if err := db.Exec("CREATE TYPE user_status AS enum ('pending','docs','active','rejected','suspended');").Error; err != nil {
+		return fmt.Errorf("auto-migration failed: %w", err)
+	}
 	err := db.AutoMigrate(
 		&entities.Role{},
 		&entities.Permission{},

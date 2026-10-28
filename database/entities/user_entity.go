@@ -6,16 +6,26 @@ import (
 	"github.com/google/uuid"
 )
 
+type UserStatus string
+
+const (
+	StatusPending   UserStatus = "pending"
+	StatusDocs      UserStatus = "docs"
+	StatusActive    UserStatus = "active"
+	StatusRejected  UserStatus = "rejected"
+	StatusSuspended UserStatus = "suspended"
+)
+
 type User struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Phone      string    `gorm:"type:varchar(20);not null;uniqueIndex:idx_users_phone,where:deleted_at IS NULL" json:"phone"`
-	Password   string    `gorm:"type:varchar(255);not null" json:"-"`
-	IsVerified bool      `gorm:"default:false" json:"is_verified"`
-	IsActive   bool      `gorm:"default:false" json:"is_active"`
-	Role       Role      `gorm:"foreignKey:RoleID" json:"role"`
-	RoleID     uint      `gorm:"not null" json:"role_id"`
-	Provider   *Provider `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"provider,omitempty"`
-	Consumer   *Consumer `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"consumer,omitempty"`
+	ID         uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Phone      string     `gorm:"type:varchar(20);not null;uniqueIndex:idx_users_phone,where:deleted_at IS NULL" json:"phone"`
+	Password   string     `gorm:"type:varchar(255);not null" json:"-"`
+	IsVerified bool       `gorm:"default:false" json:"is_verified"`
+	Status     UserStatus `gorm:"type:user_status;default:'pending'" json:"status"`
+	Role       Role       `gorm:"foreignKey:RoleID" json:"role"`
+	RoleID     uint       `gorm:"not null" json:"role_id"`
+	Provider   *Provider  `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"provider,omitempty"`
+	Consumer   *Consumer  `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"consumer,omitempty"`
 
 	TimeStamp
 }

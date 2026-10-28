@@ -79,6 +79,26 @@ var (
 		Code:    errsCode.ErrInternalServer,
 		Message: "internal server error, please try again later",
 	}
+	ErrAccountPending = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrAccountPending,
+		Message: "Acount is Pending",
+	}
+	ErrAccountDocs = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrAccountDocs,
+		Message: "Acount is Docs",
+	}
+	ErrAccountRejected = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrAccountDocs,
+		Message: "Acount is rejected",
+	}
+	StatusSuspended = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrStatusSuspended,
+		Message: "Acount is rejected",
+	}
 )
 
 // NewInvalidProfileField builds a 400 error describing which field is missing/invalid.

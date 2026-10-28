@@ -49,9 +49,7 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 	if req.IsVerified != nil {
 		existingUser.IsVerified = *req.IsVerified
 	}
-	if req.IsActive != nil {
-		existingUser.IsActive = *req.IsActive
-	}
+
 	if req.RoleID != nil {
 		existingUser.RoleID = *req.RoleID
 	}

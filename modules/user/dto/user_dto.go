@@ -97,7 +97,7 @@ type UserResponseBase struct {
 	ID         uuid.UUID `json:"id"`
 	Phone      string    `json:"phone"`
 	IsVerified bool      `json:"is_verified"`
-	IsActive   bool      `json:"is_active"`
+	Status     string    `json:"status"`
 	RoleID     uint      `json:"role_id"`
 	RoleName   string    `json:"role_name,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
@@ -132,7 +132,7 @@ func ToUserResponse(user *entities.User) *UserResponseBase {
 		ID:         user.ID,
 		Phone:      user.Phone,
 		IsVerified: user.IsVerified,
-		IsActive:   user.IsActive,
+		Status:     string(user.Status),
 		RoleID:     user.RoleID,
 		RoleName:   user.Role.Name,
 		CreatedAt:  user.CreatedAt,
