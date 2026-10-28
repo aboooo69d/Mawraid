@@ -8,6 +8,7 @@ import (
 	"github.com/najm-x/nova/modules/auth/repo"
 	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
 	"github.com/najm-x/nova/pkg/respons"
+	smsSender "github.com/najm-x/nova/pkg/sms_sender"
 )
 
 var (
@@ -49,11 +50,13 @@ type OtpService interface {
 
 type otpService struct {
 	otpRepo repo.OtpRepo
+	sms     smsSender.Provider
 }
 
-func NewOtpService(otpRepo repo.OtpRepo) OtpService {
+func NewOtpService(otpRepo repo.OtpRepo, sms smsSender.Provider) OtpService {
 	return &otpService{
 		otpRepo: otpRepo,
+		sms:     sms,
 	}
 }
 
@@ -75,6 +78,9 @@ func (s *otpService) SendOtp(c context.Context, phone string) (string, error) {
 	if err := s.otpRepo.Save(c, phone, code); err != nil {
 		return "", err
 	}
+	go func() {
+		s.sms.SendSMS(phone, code)
+	}()
 
 	return code, nil
 }
