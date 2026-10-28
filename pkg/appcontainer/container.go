@@ -99,7 +99,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	uService := userService.NewUserService(uRepo)
 
 	// 9. Handlers
-	aHandler := authHandler.NewAuthHandler(aService, uploader)
+	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
 
 	return &AppContainer{
 		Config:      cfg,

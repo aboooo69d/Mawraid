@@ -13,5 +13,6 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler) {
 		auth.POST("/register/provider", h.RegisterProvider)
 		auth.POST("/login", h.Login)
 		auth.POST("/verify-phone", h.VerifyPhone)
+		auth.POST("/resend-otp", h.ResendOtp)
 	}
 }

@@ -18,12 +18,13 @@ var _ = authDto.ErrAccountAlreadyVerified
 
 type AuthHandler struct {
 	authService service.AuthService
+	otpService  service.OtpService
 	uploader    *storage.SecureUploader
 }
 
-func NewAuthHandler(authService service.AuthService, uploader *storage.SecureUploader) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, otpService service.OtpService, uploader *storage.SecureUploader) *AuthHandler {
 
-	return &AuthHandler{authService: authService, uploader: uploader}
+	return &AuthHandler{authService: authService, otpService: otpService, uploader: uploader}
 }
 
 // RegisterConsumerForm is the multipart/form-data body of consumer registration.
@@ -227,6 +228,20 @@ func (h *AuthHandler) VerifyPhone(c *gin.Context) {
 	}
 
 	if err := h.authService.VerifyPhone(c.Request.Context(), req.Phone, req.Code); err != nil {
+		respons.Fail(c, err.(*respons.AppError))
+		return
+	}
+	respons.OK(c, nil)
+}
+
+func (h *AuthHandler) ResendOtp(c *gin.Context) {
+	var req dto.ResendOtpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respons.BadRequest(c, err.Error())
+		return
+	}
+
+	if _, err := h.otpService.SendOtp(c.Request.Context(), req.Phone); err != nil {
 		respons.Fail(c, err.(*respons.AppError))
 		return
 	}

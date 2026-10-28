@@ -9,6 +9,9 @@ type VerifyPhoneRequest struct {
 	Phone string `json:"phone" binding:"required,min=9,max=20"`
 	Code  string `json:"code" binding:"required,len=6,numeric"`
 }
+type ResendOtpRequest struct {
+	Phone string `json:"phone" binding:"required,min=9,max=20"`
+}
 
 var (
 	// 409 Conflict - الرقم مسجل مسبقاً (تم تصحيحها من 404 إلى 409)

@@ -15,17 +15,17 @@ var (
 	ErrCooldownActive = &respons.AppError{
 		Status:  429,
 		Code:    errsCode.ErrCooldownActive,
-		Message: "يرجى الانتظار دقيقة قبل طلب رمز جديد", // "please wait a minute before requesting a new code"
+		Message: "please wait a minute before requesting a new code", // "please wait a minute before requesting a new code"
 	}
 	ErrDailyLimitReached = &respons.AppError{
 		Status:  429,
 		Code:    errsCode.ErrDailyLimitReached,
-		Message: "لقد تجاوزت الحد الأقصى لطلب الرموز اليوم", // "daily OTP request limit reached"
+		Message: "daily OTP request limit reached", // "daily OTP request limit reached"
 	}
 	ErrVerifyLimitReached = &respons.AppError{
 		Status:  429,
 		Code:    errsCode.ErrVerifyLimitReached,
-		Message: "لقد تجاوزت الحد الأقصى لمحاولات التحقق، اطلب رمزاً جديداً", // "maximum verification attempts reached, request a new code"
+		Message: "maximum verification attempts reached, request a new code", // "maximum verification attempts reached, request a new code"
 	}
 
 	// 400 Bad Request - الرمز غير صحيح أو منتهي
