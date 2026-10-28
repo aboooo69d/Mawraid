@@ -95,7 +95,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 	// 8. Services
 	oService := authService.NewOtpService(oRepo)
-	aService := authService.NewAuthService(uRepo, rRepo, oService)
+	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
 
 	// 9. Handlers

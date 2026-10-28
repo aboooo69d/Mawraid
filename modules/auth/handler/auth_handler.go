@@ -247,3 +247,66 @@ func (h *AuthHandler) ResendOtp(c *gin.Context) {
 	}
 	respons.OK(c, nil)
 }
+
+// ForgetPassword godoc
+// @Summary      Request password reset
+// @Description  Sends a password reset key via SMS to the given phone number (if it exists).
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body      dto.ForgetPasswordRequest  true  "Phone number"
+// @Success      200     {object}  respons.Response  "Reset key sent (if account exists)"
+// @Failure      400     {object}  respons.Response  "Invalid request body"
+// @Failure      500     {object}  respons.Response  "Internal server error"
+// @Router       /auth/forget-password [post]
+func (h *AuthHandler) ForgetPassword(c *gin.Context) {
+	var req dto.ForgetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respons.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := h.authService.ForgetPassword(c.Request.Context(), req.Phone); err != nil {
+		failWithAppError(c, err)
+		return
+	}
+	respons.OK(c, nil)
+}
+
+// ResetPassword godoc
+// @Summary      Reset password
+// @Description  Resets the user's password using the reset key received via SMS.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body      dto.RestPasswordRequest  true  "Reset key and new password"
+// @Success      200     {object}  respons.Response  "Password reset successfully"
+// @Failure      400     {object}  respons.Response  "Invalid request body"
+// @Failure      403     {object}  respons.Response  "Invalid or expired reset key"
+// @Failure      404     {object}  respons.Response  "User not found"
+// @Failure      500     {object}  respons.Response  "Internal server error"
+// @Router       /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req dto.RestPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respons.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := h.authService.ResetPassword(c.Request.Context(), req); err != nil {
+		failWithAppError(c, err)
+		return
+	}
+	respons.OK(c, nil)
+}
+
+// failWithAppError responds with the AppError if err is one, otherwise a generic 500.
+// ResetPassword can return raw redis/repo errors, so a plain type assertion would panic.
+func failWithAppError(c *gin.Context, err error) {
+	var appErr *respons.AppError
+	if errors.As(err, &appErr) {
+		respons.Fail(c, appErr)
+		return
+	}
+	respons.Fail(c, dto.ErrInternalServer)
+}
