@@ -55,7 +55,6 @@ type CreateConsumerRequest struct {
 
 type UpdateUserRequest struct {
 	UserBase
-	Phone      *string                `json:"phone,omitempty" binding:"omitempty,min=9,max=20"`
 	IsVerified *bool                  `json:"is_verified,omitempty"`
 	IsActive   *bool                  `json:"is_active,omitempty"`
 	RoleID     *uint                  `json:"role_id,omitempty"`

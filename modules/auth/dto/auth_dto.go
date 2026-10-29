@@ -6,21 +6,21 @@ import (
 )
 
 type VerifyPhoneRequest struct {
-	Phone string `json:"phone" binding:"required,min=9,max=20"`
+	Phone string `json:"phone" binding:"required,yemen_phone"`
 	Code  string `json:"code" binding:"required,len=6,numeric"`
 }
 type ResendOtpRequest struct {
-	Phone string `json:"phone" binding:"required,min=9,max=20"`
+	Phone string `json:"phone" binding:"required,yemen_phone"`
 }
 type RestPasswordRequest struct {
 	ResetKey string `json:"rest_key" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 type ForgetPasswordRequest struct {
-	Phone string `json:"phone" binding:"required,min=9,max=20"`
+	Phone string `json:"phone" binding:"required,yemen_phone"`
 }
 type UserLoginRequest struct {
-	Phone    string `json:"phone" binding:"required,min=9,max=20"`
+	Phone    string `json:"phone" binding:"required,yemen_phone"`
 	Password string `json:"password" binding:"required,min=8,max=255"`
 }
 

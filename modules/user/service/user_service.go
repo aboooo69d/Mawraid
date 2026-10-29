@@ -38,12 +38,12 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		return nil, err
 	}
 
-	if req.Phone != nil && *req.Phone != existingUser.Phone {
+	if req.Phone != "" && req.Phone != existingUser.Phone {
 
-		if _, err := s.userRepo.GetUserByPhone(c, *req.Phone); err == nil {
+		if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
 			return nil, dto.ErrPhoneAlreadyExists
 		}
-		existingUser.Phone = *req.Phone
+		existingUser.Phone = req.Phone
 	}
 
 	if req.IsVerified != nil {
