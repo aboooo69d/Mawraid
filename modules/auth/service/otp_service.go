@@ -6,6 +6,8 @@ import (
 	"math/big"
 
 	"github.com/najm-x/nova/modules/auth/repo"
+	userRepo "github.com/najm-x/nova/modules/user/repo"
+
 	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
 	"github.com/najm-x/nova/pkg/respons"
 	smsSender "github.com/najm-x/nova/pkg/sms_sender"
@@ -44,13 +46,14 @@ const (
 )
 
 type OtpService interface {
-	SendOtp(c context.Context, phone string) (string, error)
+	SendOtp(c context.Context, phone string) error
 	VerifyOtp(c context.Context, phone string, code string) error
 }
 
 type otpService struct {
-	otpRepo repo.OtpRepo
-	sms     smsSender.Provider
+	otpRepo  repo.OtpRepo
+	userRepo userRepo.UserRepo
+	sms      smsSender.Provider
 }
 
 func NewOtpService(otpRepo repo.OtpRepo, sms smsSender.Provider) OtpService {
@@ -60,29 +63,30 @@ func NewOtpService(otpRepo repo.OtpRepo, sms smsSender.Provider) OtpService {
 	}
 }
 
-func (s *otpService) SendOtp(c context.Context, phone string) (string, error) {
-
+func (s *otpService) SendOtp(c context.Context, phone string) error {
 	if s.otpRepo.GetIsCooldown(c, phone) {
-		return "", ErrCooldownActive
+		return ErrCooldownActive
 	}
 
 	if s.otpRepo.GetDailyLimit(c, phone) >= MaxDailyOtpRequests {
-		return "", ErrDailyLimitReached
+		return ErrDailyLimitReached
 	}
-
+	if _, err := s.userRepo.GetUserByPhone(c, phone); err == nil {
+		return nil
+	}
 	code, err := generateSecureOtp(OtpLength)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if err := s.otpRepo.Save(c, phone, code); err != nil {
-		return "", err
+		return err
 	}
 	go func() {
 		s.sms.SendSMS(phone, code)
 	}()
 
-	return code, nil
+	return nil
 }
 
 func (s *otpService) VerifyOtp(c context.Context, phone string, code string) error {

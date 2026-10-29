@@ -280,7 +280,7 @@ func (h *AuthHandler) ResendOtp(c *gin.Context) {
 		return
 	}
 
-	if _, err := h.otpService.SendOtp(c.Request.Context(), req.Phone); err != nil {
+	if err := h.otpService.SendOtp(c.Request.Context(), req.Phone); err != nil {
 		_ = c.Error(err)
 		return
 	}
