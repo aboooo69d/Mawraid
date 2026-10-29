@@ -23,6 +23,52 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/forget-password": {
+            "post": {
+                "description": "Sends a password reset key via SMS to the given phone number (if it exists).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request password reset",
+                "parameters": [
+                    {
+                        "description": "Phone number",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reset key sent (if account exists)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticate user with phone and password.",
@@ -86,6 +132,35 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Account not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "logout and and delete cookies.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Logged in successfully",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
                         }
@@ -295,6 +370,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/reset-password": {
+            "post": {
+                "description": "Resets the user's password using the reset key received via SMS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset password",
+                "parameters": [
+                    {
+                        "description": "Reset key and new password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password reset successfully",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid or expired reset key",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/verify-phone": {
             "post": {
                 "description": "Verifies the phone number using the 6-digit OTP code sent after registration.",
@@ -355,6 +488,34 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 9
+                }
+            }
+        },
+        "github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "rest_key"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "rest_key": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest": {
             "type": "object",
             "required": [
@@ -396,9 +557,6 @@ const docTemplate = `{
                 "id_number": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
-                },
                 "is_business": {
                     "type": "boolean"
                 },
@@ -421,6 +579,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "role_name": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -484,9 +645,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
-                },
                 "is_verified": {
                     "type": "boolean"
                 },
@@ -503,6 +661,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "start_at": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -538,9 +699,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
-                },
                 "is_verified": {
                     "type": "boolean"
                 },
@@ -551,6 +709,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "role_name": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -607,7 +768,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "rtkgcrck-8080.inc1.devtunnels.ms",
+	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Nova API",
