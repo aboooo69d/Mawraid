@@ -26,12 +26,6 @@ type UserBase struct {
 	Phone    string `json:"phone" binding:"required,yemen_phone"`
 	Password string `json:"password" binding:"required,min=8,max=255"`
 }
-type CreateUserRequest struct {
-	Phone    string                 `json:"phone" binding:"required,min=9,max=20"`
-	Password string                 `json:"password" binding:"required,min=8,max=255"`
-	Provider *CreateProviderRequest `json:"provider,omitempty"`
-	Consumer *CreateConsumerRequest `json:"consumer,omitempty"`
-}
 
 type CreateProviderRequest struct {
 	UserBase
@@ -58,10 +52,7 @@ type CreateConsumerRequest struct {
 	BusinessName *string `json:"business_name" binding:"required_if=IsBusiness true,min=2,max=200"`
 	BusinessFile *string `json:"business_file" binding:"required_if=IsBusiness true,max=500"`
 }
-type UserLoginRequest struct {
-	Phone    string `json:"phone" binding:"required,min=9,max=20"`
-	Password string `json:"password" binding:"required,min=8,max=255"`
-}
+
 type UpdateUserRequest struct {
 	UserBase
 	Phone      *string                `json:"phone,omitempty" binding:"omitempty,min=9,max=20"`

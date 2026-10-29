@@ -199,7 +199,7 @@ func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 // @Failure      404     {object}  respons.Response  "Account not found"
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req userDto.UserLoginRequest
+	var req authDto.UserLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(respons.ErrBadRequest)
 		return

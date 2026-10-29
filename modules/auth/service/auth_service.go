@@ -21,7 +21,7 @@ type (
 	AuthService interface {
 		RegisterConsumer(c context.Context, req userDto.CreateConsumerRequest) (*userDto.ConsumerResponse, error)
 		RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error)
-		Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponseBase, error)
+		Login(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error)
 		VerifyPhone(c context.Context, phone string, code string) error
 		ForgetPassword(c context.Context, phone string) error
 		ResetPassword(c context.Context, req dto.RestPasswordRequest) error
@@ -124,7 +124,7 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateProv
 	return userDto.ToProviderResponse(&newUser), nil
 }
 
-func (s *authService) Login(c context.Context, req userDto.UserLoginRequest) (*userDto.UserResponseBase, error) {
+func (s *authService) Login(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error) {
 	existingUser, err := s.userRepo.GetUserByPhone(c, req.Phone)
 	if err != nil {
 		return nil, dto.ErrPhoneNotFound

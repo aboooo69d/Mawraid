@@ -19,6 +19,10 @@ type RestPasswordRequest struct {
 type ForgetPasswordRequest struct {
 	Phone string `json:"phone" binding:"required,min=9,max=20"`
 }
+type UserLoginRequest struct {
+	Phone    string `json:"phone" binding:"required,min=9,max=20"`
+	Password string `json:"password" binding:"required,min=8,max=255"`
+}
 
 var (
 	// 409 Conflict - الرقم مسجل مسبقاً (تم تصحيحها من 404 إلى 409)
