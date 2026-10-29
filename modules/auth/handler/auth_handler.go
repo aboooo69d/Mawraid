@@ -36,15 +36,16 @@ type RegisterConsumerForm struct {
 	Name     string `form:"name" binding:"required,max=250"`
 	IdNumber string `form:"id_number" binding:"required,max=50"`
 
-	IsDriver      bool    `form:"is_driver"`
-	VehicleNumber *string `form:"vehicle_number" binding:"omitempty,max=50"`
-	VehicleType   *string `form:"vehicle_type" binding:"omitempty,max=50"`
+	IsDriver bool `form:"is_driver"`
+
+	VehicleNumber *string `form:"vehicle_number" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
+	VehicleType   *string `form:"vehicle_type" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
 
 	IsHome      bool `form:"is_home"`
-	FamilyCount *int `form:"family_count" binding:"omitempty,min=1"`
+	FamilyCount *int `form:"family_count" binding:"required_if=IsHome true,omitempty,min=1,max=50"`
 
 	IsBusiness   bool    `form:"is_business"`
-	BusinessName *string `form:"business_name" binding:"omitempty,max=200"`
+	BusinessName *string `form:"business_name" binding:"required_if=IsBusiness true,omitempty,min=2,max=200"`
 }
 
 // RegisterConsumer godoc
@@ -76,6 +77,10 @@ func (h *AuthHandler) RegisterConsumer(c *gin.Context) {
 
 	var form RegisterConsumerForm
 	if err := c.ShouldBind(&form); err != nil {
+		_ = c.Error(respons.ErrBadRequest)
+		return
+	}
+	if !form.IsHome && !form.IsDriver && !form.IsBusiness {
 		_ = c.Error(respons.ErrBadRequest)
 		return
 	}

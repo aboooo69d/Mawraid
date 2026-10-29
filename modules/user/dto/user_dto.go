@@ -48,15 +48,15 @@ type CreateConsumerRequest struct {
 	IdImage  string `json:"id_image" binding:"omitempty,max=500"`
 
 	IsDriver      bool    `json:"is_driver"`
-	VehicleNumber *string `json:"vehicle_number,omitempty" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
-	VehicleType   *string `json:"vehicle_type,omitempty" binding:"required_if=IsDriver true,omitempty,min=2,max=50"`
+	VehicleNumber *string `json:"vehicle_number" binding:"required_if=IsDriver true,min=2,max=50"`
+	VehicleType   *string `json:"vehicle_type" binding:"required_if=IsDriver true,min=2,max=50"`
 
 	IsHome      bool `json:"is_home"`
-	FamilyCount *int `json:"family_count,omitempty" binding:"required_if=IsHome true,omitempty,min=1,max=50"`
+	FamilyCount *int `json:"family_count" binding:"required_if=IsHome true,min=1,max=50"`
 
 	IsBusiness   bool    `json:"is_business"`
-	BusinessName *string `json:"business_name,omitempty" binding:"required_if=IsBusiness true,omitempty,min=2,max=200"`
-	BusinessFile *string `json:"business_file,omitempty" binding:"required_if=IsBusiness true,omitempty,max=500"`
+	BusinessName *string `json:"business_name" binding:"required_if=IsBusiness true,min=2,max=200"`
+	BusinessFile *string `json:"business_file" binding:"required_if=IsBusiness true,max=500"`
 }
 type UserLoginRequest struct {
 	Phone    string `json:"phone" binding:"required,min=9,max=20"`
