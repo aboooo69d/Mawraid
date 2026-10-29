@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/modules/auth/dto"
 	authDto "github.com/najm-x/nova/modules/auth/dto"
@@ -204,7 +205,40 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
+	session := sessions.Default(c)
+	session.Set("user_id", user.ID)
+	session.Set("role", user.RoleName)
+	if err := session.Save(); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
 	respons.OK(c, user)
+}
+
+// Logout godoc
+// @Summary      Logout user
+// @Description  logout and and delete cookies.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Success      200     {object}  respons.Response  "Logged in successfully"
+// @Failure      500     {object}  respons.Response  "Invalid request body"
+// @Router       /auth/logout [post]
+func (h *AuthHandler) LogOut(c *gin.Context) {
+	session := sessions.Default(c)
+	print(session.ID())
+	session.Clear()
+
+	session.Options(sessions.Options{MaxAge: -1, Path: "/"})
+
+	err := session.Save()
+
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	respons.OK(c, nil)
 }
 
 // VerifyPhone godoc

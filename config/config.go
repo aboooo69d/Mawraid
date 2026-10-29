@@ -49,12 +49,20 @@ type CloudflareConfig struct {
 	AccessKeyId     string
 	AccessKeySecret string
 }
-
+type SessionConfg struct {
+	Size     int
+	Network  string
+	Address  string
+	Username string
+	Password string
+	KeyPairs []byte
+}
 type Config struct {
 	Server     ServerConfig
 	Database   DatabaseConfig
 	Redis      RedisConfig
 	Cloudflare CloudflareConfig
+	Session    SessionConfg
 
 	// EncryptionKey is a hex-encoded 32-byte key (64 hex chars) used to
 	// encrypt uploaded files with AES-256-GCM. Generate: openssl rand -hex 32
@@ -65,6 +73,7 @@ func NewConfig() *Config {
 	_ = godotenv.Load()
 
 	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
+	size, _ := strconv.Atoi(getEnv("SESSION_SIZE", "0"))
 
 	return &Config{
 		Server: ServerConfig{
@@ -90,6 +99,14 @@ func NewConfig() *Config {
 			AccountId:       getEnv("ACCOUNT_ID", ""),
 			AccessKeyId:     getEnv("ACCESS_KEY_ID", ""),
 			AccessKeySecret: getEnv("ACCESS_KEY_SECRET", ""),
+		},
+		Session: SessionConfg{
+			Size:     size,
+			Network:  getEnv("SESSION_NETWORK", "tcp"),
+			Address:  getEnv("SESSION_NETWORK", "localhost:6379"),
+			Username: getEnv("SESSION_USERNAME", ""),
+			Password: getEnv("SESSION_PASSWORD", ""),
+			KeyPairs: []byte(getEnv("SESSION_ENC_KEY", "encryption-key")),
 		},
 		EncryptionKey: getEnv("ENCRYPTION_KEY", ""),
 	}

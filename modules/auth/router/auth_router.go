@@ -16,5 +16,7 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler) {
 		auth.POST("/resend-otp", h.ResendOtp)
 		auth.POST("/forget-password", h.ForgetPassword)
 		auth.POST("/reset-password", h.ResetPassword)
+		auth.POST("/logout", h.LogOut)
+
 	}
 }

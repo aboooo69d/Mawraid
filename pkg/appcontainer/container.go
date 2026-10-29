@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/config"
 	authHandler "github.com/najm-x/nova/modules/auth/handler"
@@ -34,6 +35,7 @@ type AppContainer struct {
 	Redis       *redis.Client
 	Storage     storage.Storage
 	Uploader    *storage.SecureUploader
+	Store       sessions.Store
 	SmsProvider smsSender.Provider
 
 	// Repositories
@@ -71,7 +73,11 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	if err != nil {
 		return nil, fmt.Errorf("appcontainer: redis error: %w", err)
 	}
+	store, err := database.NewSessionStore(&cfg.Session)
+	if err != nil {
+		return nil, fmt.Errorf("appcontainer: redis error: %w", err)
 
+	}
 	// 4. Validate Encryption Key for uploads
 	encKey, err := cfg.EncryptionKeyBytes()
 	if err != nil {
@@ -108,6 +114,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		Storage:     r2Storage,
 		Uploader:    uploader,
 		SmsProvider: smsClient,
+		Store:       store,
 
 		UserRepo: uRepo,
 		RoleRepo: rRepo,
@@ -133,9 +140,10 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 			"timestamp": time.Now().UTC(),
 		})
 	})
-
+	r.Use(sessions.Sessions("session", c.Store))
 	// API v1
 	v1 := r.Group("/api/v1")
+
 	{
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler)
 	}
