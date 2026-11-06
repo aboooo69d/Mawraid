@@ -100,7 +100,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	oRepo := authRepo.NewOtpRepo(rdb)
 
 	// 8. Services
-	oService := authService.NewOtpService(oRepo, smsClient)
+	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
 

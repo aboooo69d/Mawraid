@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
+	"github.com/najm-x/nova/modules/auth/dto"
 	"github.com/najm-x/nova/modules/auth/repo"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
 
@@ -56,10 +57,11 @@ type otpService struct {
 	sms      smsSender.Provider
 }
 
-func NewOtpService(otpRepo repo.OtpRepo, sms smsSender.Provider) OtpService {
+func NewOtpService(otpRepo repo.OtpRepo, userRepo userRepo.UserRepo, sms smsSender.Provider) OtpService {
 	return &otpService{
-		otpRepo: otpRepo,
-		sms:     sms,
+		otpRepo:  otpRepo,
+		userRepo: userRepo,
+		sms:      sms,
 	}
 }
 
@@ -71,7 +73,7 @@ func (s *otpService) SendOtp(c context.Context, phone string) error {
 	if s.otpRepo.GetDailyLimit(c, phone) >= MaxDailyOtpRequests {
 		return ErrDailyLimitReached
 	}
-	if _, err := s.userRepo.GetUserByPhone(c, phone); err == nil {
+	if _, err := s.userRepo.GetUserByPhone(c, phone); err != nil {
 		return nil
 	}
 	code, err := generateSecureOtp(OtpLength)
@@ -82,9 +84,10 @@ func (s *otpService) SendOtp(c context.Context, phone string) error {
 	if err := s.otpRepo.Save(c, phone, code); err != nil {
 		return err
 	}
-	go func() {
-		s.sms.SendSMS(phone, code)
-	}()
+	if err := s.sms.SendSMS(phone, code); err != nil {
+
+		return dto.ErrInvalidOtpCode
+	}
 
 	return nil
 }

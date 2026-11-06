@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	redisKeys "github.com/najm-x/nova/pkg/constants/redis_keys"
@@ -28,17 +29,18 @@ func NewOtpRepo(redis *redis.Client) OtpRepo {
 }
 
 func (r *otpRepo) GetIsCooldown(c context.Context, phone string) bool {
-	key := redisKeys.BuildOtpKey(redisKeys.OtpCooldown, phone)
+	otpCooldownKey := redisKeys.BuildOtpKey(redisKeys.OtpCooldown, phone)
 
-	count, err := r.redis.Exists(c, key).Result()
+	_, err := r.redis.Get(c, otpCooldownKey).Result()
 	if err != nil {
 		return false
 	}
-	return count > 0
+	return true
 }
 
 func (r *otpRepo) GetDailyLimit(c context.Context, phone string) int {
 	key := redisKeys.BuildOtpKey(redisKeys.OtpDailyLimit, phone)
+
 	result, err := r.redis.Get(c, key).Int()
 	if err != nil {
 		return 0
@@ -60,7 +62,7 @@ func (r *otpRepo) Save(c context.Context, phone string, code string) error {
 	otpCodeKey := redisKeys.BuildOtpKey(redisKeys.OtpCode, phone)
 	dailyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpDailyLimit, phone)
 	verifyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpVerifyLimit, phone)
-
+	fmt.Println(coolDownKey, " eee")
 	hashedCode, err := valueHashing.HashValue(code)
 	if err != nil {
 		return err
