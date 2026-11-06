@@ -189,9 +189,13 @@ func (s *authService) ForgetPassword(c context.Context, phone string) error {
 		go s.sms.SendSMS(phone, "your repassword code is:"+code+"don't share it")
 		return nil
 	}
-	_, err := s.userRepo.GetUserByPhone(c, phone)
+	user, err := s.userRepo.GetUserByPhone(c, phone)
 	if err != nil {
 		return nil
+	}
+
+	if user.Status != entities.StatusActive {
+		return dto.ErrAcountNotActive
 	}
 	code, codeErr := utils.GenerateSecureToken()
 
@@ -226,6 +230,9 @@ func (s *authService) ResetPassword(c context.Context, req dto.RestPasswordReque
 	user, err := s.userRepo.GetUserByPhone(c, phone)
 	if err != nil {
 		return dto.ErrUserNotFound
+	}
+	if user.Status != entities.StatusActive {
+		return dto.ErrAcountNotActive
 	}
 
 	hashedPassword, err := valueHashing.HashValue(req.Password)
