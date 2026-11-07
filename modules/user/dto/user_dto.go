@@ -3,7 +3,6 @@ package dto
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
 	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
 	"github.com/najm-x/nova/pkg/respons"
@@ -84,7 +83,7 @@ type UpdateConsumerRequest struct {
 }
 
 type UserResponseBase struct {
-	ID         uuid.UUID `json:"id"`
+	ID         string    `json:"id"`
 	Phone      string    `json:"phone"`
 	IsVerified bool      `json:"is_verified"`
 	Status     string    `json:"status"`
@@ -119,7 +118,7 @@ type ConsumerResponse struct {
 
 func ToUserResponse(user *entities.User) *UserResponseBase {
 	return &UserResponseBase{
-		ID:         user.ID,
+		ID:         user.ID.String(),
 		Phone:      user.Phone,
 		IsVerified: user.IsVerified,
 		Status:     string(user.Status),
