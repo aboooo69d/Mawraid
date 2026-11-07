@@ -9,6 +9,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/config"
+	"github.com/najm-x/nova/middleware"
 	authHandler "github.com/najm-x/nova/modules/auth/handler"
 	authRepo "github.com/najm-x/nova/modules/auth/repo"
 	authRouter "github.com/najm-x/nova/modules/auth/router"
@@ -141,6 +142,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 		})
 	})
 	r.Use(sessions.Sessions("session", c.Store))
+	r.Use(middleware.IPRateLimitHandler(c.Redis, 100, 1*time.Minute))
 	// API v1
 	v1 := r.Group("/api/v1")
 
