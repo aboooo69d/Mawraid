@@ -1,4 +1,4 @@
-package dto
+package errs_code
 
 const (
 	// User Errors: 1000-1099
@@ -23,6 +23,7 @@ const (
 	ErrDailyLimitReached  = 1202
 	ErrVerifyLimitReached = 1203
 	ErrInvalidOtp         = 1204
+	ErrToManyRequest      = 1205
 )
 
 const (

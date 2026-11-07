@@ -40,3 +40,10 @@ func Fail(c *gin.Context, err *AppError) {
 		Error:   err,
 	})
 }
+
+func Abort(c *gin.Context, err *AppError) {
+	c.AbortWithStatusJSON(err.Status, Response{
+		Success: false,
+		Error:   err,
+	})
+}
