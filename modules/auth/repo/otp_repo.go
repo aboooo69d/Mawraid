@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	redisKeys "github.com/najm-x/nova/pkg/constants/redis_keys"
@@ -29,7 +28,7 @@ func NewOtpRepo(redis *redis.Client) OtpRepo {
 }
 
 func (r *otpRepo) GetIsCooldown(c context.Context, phone string) bool {
-	otpCooldownKey := redisKeys.BuildOtpKey(redisKeys.OtpCooldown, phone)
+	otpCooldownKey := redisKeys.BuildKey(redisKeys.OtpCooldown, phone)
 
 	_, err := r.redis.Get(c, otpCooldownKey).Result()
 	if err != nil {
@@ -39,7 +38,7 @@ func (r *otpRepo) GetIsCooldown(c context.Context, phone string) bool {
 }
 
 func (r *otpRepo) GetDailyLimit(c context.Context, phone string) int {
-	key := redisKeys.BuildOtpKey(redisKeys.OtpDailyLimit, phone)
+	key := redisKeys.BuildKey(redisKeys.OtpDailyLimit, phone)
 
 	result, err := r.redis.Get(c, key).Int()
 	if err != nil {
@@ -49,7 +48,7 @@ func (r *otpRepo) GetDailyLimit(c context.Context, phone string) int {
 }
 
 func (r *otpRepo) GetVerifyLimit(c context.Context, phone string) int {
-	verifyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpVerifyLimit, phone)
+	verifyLimitKey := redisKeys.BuildKey(redisKeys.OtpVerifyLimit, phone)
 	count, err := r.redis.Get(c, verifyLimitKey).Int()
 	if err != nil {
 		return 0
@@ -58,11 +57,11 @@ func (r *otpRepo) GetVerifyLimit(c context.Context, phone string) int {
 }
 
 func (r *otpRepo) Save(c context.Context, phone string, code string) error {
-	coolDownKey := redisKeys.BuildOtpKey(redisKeys.OtpCooldown, phone)
-	otpCodeKey := redisKeys.BuildOtpKey(redisKeys.OtpCode, phone)
-	dailyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpDailyLimit, phone)
-	verifyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpVerifyLimit, phone)
-	fmt.Println(coolDownKey, " eee")
+	coolDownKey := redisKeys.BuildKey(redisKeys.OtpCooldown, phone)
+	otpCodeKey := redisKeys.BuildKey(redisKeys.OtpCode, phone)
+	dailyLimitKey := redisKeys.BuildKey(redisKeys.OtpDailyLimit, phone)
+	verifyLimitKey := redisKeys.BuildKey(redisKeys.OtpVerifyLimit, phone)
+	
 	hashedCode, err := valueHashing.HashValue(code)
 	if err != nil {
 		return err
@@ -87,8 +86,8 @@ func (r *otpRepo) Save(c context.Context, phone string, code string) error {
 }
 
 func (r *otpRepo) Verify(c context.Context, phone string, code string) bool {
-	otpCodeKey := redisKeys.BuildOtpKey(redisKeys.OtpCode, phone)
-	otpVerifyLimitKey := redisKeys.BuildOtpKey(redisKeys.OtpVerifyLimit, phone)
+	otpCodeKey := redisKeys.BuildKey(redisKeys.OtpCode, phone)
+	otpVerifyLimitKey := redisKeys.BuildKey(redisKeys.OtpVerifyLimit, phone)
 
 	hashedCode, err := r.redis.Get(c, otpCodeKey).Result()
 	if err != nil {

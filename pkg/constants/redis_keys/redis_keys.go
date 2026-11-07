@@ -9,6 +9,10 @@ const (
 	OtpVerifyLimit = "otp:verify:%s"
 )
 
-func BuildOtpKey(key string, phone string) string {
+const (
+	IPRateLimit = "ip:rate_limit:%s"
+)
+
+func BuildKey(key string, phone string) string {
 	return fmt.Sprintf(key, phone)
 }
