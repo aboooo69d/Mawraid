@@ -14,6 +14,7 @@ const (
 	ErrAcountNotVerify        = 1102
 	ErrAccountAlreadyVerified = 1103
 	ErrInvalidResetKey        = 1104
+	ErrTurnstileToken         = 1104
 )
 
 const (
