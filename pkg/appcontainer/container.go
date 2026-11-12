@@ -147,7 +147,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 	v1 := r.Group("/api/v1")
 
 	{
-		authRouter.RegisterAuthRoutes(v1, c.AuthHandler)
+		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
 	}
 }
 

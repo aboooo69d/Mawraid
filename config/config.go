@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -57,12 +58,19 @@ type SessionConfg struct {
 	Password string
 	KeyPairs []byte
 }
+
+type TurnstileConfig struct {
+	SecretKey string
+	Hostnames []string
+}
+
 type Config struct {
 	Server     ServerConfig
 	Database   DatabaseConfig
 	Redis      RedisConfig
 	Cloudflare CloudflareConfig
 	Session    SessionConfg
+	Turnstile  TurnstileConfig
 
 	// EncryptionKey is a hex-encoded 32-byte key (64 hex chars) used to
 	// encrypt uploaded files with AES-256-GCM. Generate: openssl rand -hex 32
@@ -108,8 +116,22 @@ func NewConfig() *Config {
 			Password: getEnv("SESSION_PASSWORD", ""),
 			KeyPairs: []byte(getEnv("SESSION_ENC_KEY", "encryption-key")),
 		},
+		Turnstile: TurnstileConfig{
+			SecretKey: getEnv("SECRET_KEY", ""),
+			Hostnames: BuildHostList(getEnv("HOST_NAMES", "")),
+		},
 		EncryptionKey: getEnv("ENCRYPTION_KEY", ""),
 	}
+}
+
+func BuildHostList(hostsString string) []string {
+	var hostList []string
+
+	if err := json.Unmarshal([]byte(hostsString), &hostList); err != nil {
+		return []string{}
+	}
+	return hostList
+
 }
 
 // EncryptionKeyBytes decodes and validates the encryption key.
