@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -185,10 +186,11 @@ func (s *authService) VerifyPhone(c context.Context, phone string, code string) 
 }
 
 func (s *authService) ForgetPassword(c context.Context, phone string) error {
-	if code, err := s.redis.Get(c, "forget:"+phone).Result(); err == nil {
-		go s.sms.SendSMS(phone, "your repassword code is:"+code+"don't share it")
-		return nil
+	cooldownKey := "forget:cooldown:" + phone
+	if _, err := s.redis.Get(c, cooldownKey).Result(); err == nil {
+		return ErrCooldownActive
 	}
+
 	user, err := s.userRepo.GetUserByPhone(c, phone)
 	if err != nil {
 		return nil
@@ -197,23 +199,26 @@ func (s *authService) ForgetPassword(c context.Context, phone string) error {
 	if user.Status != entities.StatusActive {
 		return dto.ErrAcountNotActive
 	}
-	code, codeErr := utils.GenerateSecureToken()
 
-	if codeErr != nil {
-		return dto.ErrInternalServer
+	code, err := s.redis.Get(c, "forget:"+phone).Result()
+	if err != nil {
+		code, err = utils.GenerateSecureToken()
+		if err != nil {
+			return dto.ErrInternalServer
+		}
 	}
 
 	pip := s.redis.Pipeline()
 	pip.Set(c, code, phone, 15*time.Minute)
 	pip.Set(c, "forget:"+phone, code, 15*time.Minute)
+	pip.Set(c, cooldownKey, "1", 1*time.Minute)
 
 	if _, err := pip.Exec(c); err != nil {
 		return dto.ErrInternalServer
 	}
-	go s.sms.SendSMS(phone, "your repassword code is:"+code+"don't share it")
+	go s.sms.SendSMS(phone, fmt.Sprintf("your repassword code is: %s, don't share it", code))
 
 	return nil
-
 }
 
 func (s *authService) ResetPassword(c context.Context, req dto.RestPasswordRequest) error {

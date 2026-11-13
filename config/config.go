@@ -111,7 +111,7 @@ func NewConfig() *Config {
 		Session: SessionConfg{
 			Size:     size,
 			Network:  getEnv("SESSION_NETWORK", "tcp"),
-			Address:  getEnv("SESSION_NETWORK", "localhost:6379"),
+			Address:  getEnv("SESSION_ADDRESS", "localhost:6379"),
 			Username: getEnv("SESSION_USERNAME", ""),
 			Password: getEnv("SESSION_PASSWORD", ""),
 			KeyPairs: []byte(getEnv("SESSION_ENC_KEY", "encryption-key")),

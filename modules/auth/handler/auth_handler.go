@@ -232,7 +232,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Router       /auth/logout [post]
 func (h *AuthHandler) LogOut(c *gin.Context) {
 	session := sessions.Default(c)
-	print(session.ID())
 	session.Clear()
 
 	session.Options(sessions.Options{MaxAge: -1, Path: "/"})

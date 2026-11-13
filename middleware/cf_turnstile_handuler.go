@@ -29,26 +29,23 @@ type TurnstileResponse struct {
 }
 
 func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
-
 	return func(ctx *gin.Context) {
-
 		reqErr := &respons.AppError{
-			Code: errs_code.ErrTurnstileToken,
+			Status:  http.StatusForbidden,
+			Code:    errs_code.ErrTurnstileToken,
+			Message: "invalid or missing turnstile token",
 		}
 
 		// 1. Get token
 		token := ctx.GetHeader("cf-turnstile-response")
 
 		if token == "" || len(token) > maxTokenLength {
-			fmt.Println("Err")
 			respons.Abort(ctx, reqErr)
 			return
 		}
 
 		// 2. Validate configuration
 		if cfg.Turnstile.SecretKey == "" || len(cfg.Turnstile.Hostnames) == 0 {
-			fmt.Println("Err env")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -76,8 +73,6 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 		)
 
 		if err != nil {
-			fmt.Println("Err http")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -91,16 +86,12 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println("Err Req")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			fmt.Println("Err status")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -109,16 +100,12 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 		var result TurnstileResponse
 
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			fmt.Println("Err Decode")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}
 
 		// 6. Validate response
 		if !result.Success {
-			fmt.Println("Err Success")
-
 			respons.Abort(ctx, reqErr)
 			return
 		}

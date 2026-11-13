@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/najm-x/nova/pkg/constants/errs_code"
 	"github.com/najm-x/nova/pkg/respons"
 )
 
@@ -21,6 +23,6 @@ func ErrorHandler() gin.HandlerFunc {
 			respons.Fail(ctx, AppErr)
 			return
 		}
-		respons.Fail(ctx, &respons.AppError{Status: 500, Code: 1000, Message: "Enternal server Erro"})
+		respons.Fail(ctx, &respons.AppError{Status: http.StatusInternalServerError, Code: errs_code.ErrInternalServer, Message: "internal server error"})
 	}
 }

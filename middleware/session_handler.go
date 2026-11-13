@@ -14,8 +14,7 @@ func SessionHandler() gin.HandlerFunc {
 		role := session.Get("role")
 
 		if userId == nil {
-			respons.Fail(ctx, authDto.ErrUserNotFound)
-			ctx.Abort()
+			respons.Abort(ctx, authDto.ErrUnauthorized)
 			return
 		}
 

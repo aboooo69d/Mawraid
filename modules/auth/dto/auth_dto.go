@@ -62,6 +62,11 @@ var (
 		Code:    errsCode.ErrInvalidCredentials,
 		Message: "invalid phone number or password",
 	}
+	ErrUnauthorized = &respons.AppError{
+		Status:  401,
+		Code:    errsCode.ErrUnauthorized,
+		Message: "unauthorized access, please log in",
+	}
 	ErrInvalidOtpCode = &respons.AppError{
 		Status:  400,
 		Code:    errsCode.ErrInvalidOtpCode,
@@ -96,27 +101,27 @@ var (
 	ErrAccountPending = &respons.AppError{
 		Status:  403,
 		Code:    errsCode.ErrAccountPending,
-		Message: "Acount is Pending",
+		Message: "account is pending",
 	}
 	ErrAccountDocs = &respons.AppError{
 		Status:  403,
 		Code:    errsCode.ErrAccountDocs,
-		Message: "Acount is Docs",
+		Message: "account requires documents",
 	}
 	ErrAccountRejected = &respons.AppError{
 		Status:  403,
-		Code:    errsCode.ErrAccountDocs,
-		Message: "Acount is rejected",
+		Code:    errsCode.ErrAccountRejected,
+		Message: "account is rejected",
 	}
 	StatusSuspended = &respons.AppError{
 		Status:  403,
 		Code:    errsCode.ErrStatusSuspended,
-		Message: "Acount is rejected",
+		Message: "account is suspended",
 	}
 	ErrInvalidResetKey = &respons.AppError{
-		Status:  403,
+		Status:  400,
 		Code:    errsCode.ErrInvalidResetKey,
-		Message: "Acount is rejected",
+		Message: "invalid or expired reset key",
 	}
 )
 

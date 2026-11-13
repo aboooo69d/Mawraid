@@ -85,8 +85,7 @@ func (s *otpService) SendOtp(c context.Context, phone string) error {
 		return err
 	}
 	if err := s.sms.SendSMS(phone, code); err != nil {
-
-		return dto.ErrInvalidOtpCode
+		return dto.ErrInternalServer
 	}
 
 	return nil
