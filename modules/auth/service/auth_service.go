@@ -186,9 +186,11 @@ func (s *authService) VerifyPhone(c context.Context, phone string, code string) 
 }
 
 func (s *authService) ForgetPassword(c context.Context, phone string) error {
-	cooldownKey := "forget:cooldown:" + phone
-	if _, err := s.redis.Get(c, cooldownKey).Result(); err == nil {
-		return ErrCooldownActive
+	if s.redis != nil {
+		cooldownKey := "forget:cooldown:" + phone
+		if _, err := s.redis.Get(c, cooldownKey).Result(); err == nil {
+			return ErrCooldownActive
+		}
 	}
 
 	user, err := s.userRepo.GetUserByPhone(c, phone)
@@ -200,28 +202,39 @@ func (s *authService) ForgetPassword(c context.Context, phone string) error {
 		return dto.ErrAcountNotActive
 	}
 
-	code, err := s.redis.Get(c, "forget:"+phone).Result()
-	if err != nil {
-		code, err = utils.GenerateSecureToken()
-		if err != nil {
+	code := ""
+	if s.redis != nil {
+		code, _ = s.redis.Get(c, "forget:"+phone).Result()
+	}
+	if code == "" {
+		var codeErr error
+		code, codeErr = utils.GenerateSecureToken()
+		if codeErr != nil {
 			return dto.ErrInternalServer
 		}
 	}
 
-	pip := s.redis.Pipeline()
-	pip.Set(c, code, phone, 15*time.Minute)
-	pip.Set(c, "forget:"+phone, code, 15*time.Minute)
-	pip.Set(c, cooldownKey, "1", 1*time.Minute)
+	if s.redis != nil {
+		cooldownKey := "forget:cooldown:" + phone
+		pip := s.redis.Pipeline()
+		pip.Set(c, code, phone, 15*time.Minute)
+		pip.Set(c, "forget:"+phone, code, 15*time.Minute)
+		pip.Set(c, cooldownKey, "1", 1*time.Minute)
 
-	if _, err := pip.Exec(c); err != nil {
-		return dto.ErrInternalServer
+		if _, err := pip.Exec(c); err != nil {
+			return dto.ErrInternalServer
+		}
 	}
+
 	go s.sms.SendSMS(phone, fmt.Sprintf("your repassword code is: %s, don't share it", code))
 
 	return nil
 }
 
 func (s *authService) ResetPassword(c context.Context, req dto.RestPasswordRequest) error {
+	if s.redis == nil {
+		return dto.ErrInternalServer
+	}
 	// 1. Validate reset key
 	phone, err := s.redis.Get(c, req.ResetKey).Result()
 	if err != nil {
