@@ -2,3 +2,4 @@
 *.md
 !README.md
 !CODE_REVIEW.md
+!tests/README.md
