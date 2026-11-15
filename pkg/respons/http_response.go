@@ -33,6 +33,15 @@ func OK(c *gin.Context, data interface{}) {
 	})
 }
 
+// OKWithMeta sends a paginated success response with metadata.
+func OKWithMeta(c *gin.Context, data interface{}, meta *Meta) {
+	c.JSON(http.StatusOK, Response{
+		Success: true,
+		Data:    data,
+		Meta:    meta,
+	})
+}
+
 // Fail sends an error response.
 func Fail(c *gin.Context, err *AppError) {
 	c.JSON(err.Status, Response{
