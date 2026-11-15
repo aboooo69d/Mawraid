@@ -51,6 +51,21 @@ const (
 )
 
 const (
+	// Stock Errors: 1600-1699
+	ErrStockNotFound       = 1600
+	ErrUnitNotInStock      = 1601
+	ErrInsufficientStock   = 1602
+	ErrInvalidAmount       = 1603
+	ErrStockTypeNotFound   = 1604
+	ErrUnitNotFound        = 1605
+	ErrMainUnitRequired    = 1606
+	ErrMainUnitRate        = 1607
+	ErrMainUnitExists      = 1608
+	ErrDuplicateUnitName   = 1609
+	ErrUnitHasTransactions = 1610
+)
+
+const (
 	// Server Errors: 5000-5099
 	ErrInternalServer = 5000
 )
