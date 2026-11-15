@@ -191,7 +191,7 @@ func (h *AuthHandler) RegisterProvider(c *gin.Context) {
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
-// @Param        request body      userDto.UserLoginRequest  true  "Login credentials"
+// @Param        request body      authDto.UserLoginRequest  true  "Login credentials"
 // @Success      200     {object}  respons.Response{data=userDto.UserResponseBase}  "Logged in successfully"
 // @Failure      400     {object}  respons.Response  "Invalid request body"
 // @Failure      401     {object}  respons.Response  "Invalid credentials"
