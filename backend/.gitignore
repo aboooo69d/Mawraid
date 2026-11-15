@@ -1,0 +1,25 @@
+# Environment files (never commit real secrets)
+.env
+.env.local
+*.env.local
+
+# Build output
+/bin/
+/dist/
+server.exe
+*.exe
+*.test
+*.out
+
+# Runtime data (uploaded documents, dev logs)
+/data/
+/logs/
+
+# Go workspace cache
+/vendor/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

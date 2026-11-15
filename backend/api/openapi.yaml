@@ -1,0 +1,1115 @@
+openapi: 3.0.3
+info:
+  title: Mawarid Auth API
+  version: 1.0.0
+  description: |
+    Authentication API of the Mawarid backend (Sprint 1) — Go + GORM + PostgreSQL + Redis.
+
+    **Scope of this document:** the authentication endpoints only
+    (`/auth/register/*`, `/auth/otp/*`, `/auth/login`, `/auth/refresh`,
+    `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`,
+    `/auth/me`). Account, document, provider-profile and admin endpoints are
+    not part of this file.
+
+    **Base path.** All paths below are relative to the server URL
+    `http://localhost:8080/api/v1` (defaults `HTTP_ADDR=:8080`,
+    `API_BASE_PATH=/api/v1`; both are configurable via environment).
+
+    **Response contract**
+    - Success responses are **plain JSON objects** (no envelope), matching the
+      frontend client `lib/api/client.ts`.
+    - Failures use a single error envelope:
+      `{"error":{"code","message","message_ar","request_id","details"}}`.
+    - Every response carries an `X-Request-Id` header. A client may supply its
+      own `X-Request-Id` (1–64 chars, `[A-Za-z0-9._-]`); the server echoes it
+      or generates a UUID. The same id appears in `error.request_id` and in
+      server logs (request/response bodies are never logged).
+    - `message_ar` is the Arabic server-side message (SRS NFR-USA-02).
+
+    **Authentication.** Endpoints marked *Public* need no token. `POST /auth/logout`
+    and `GET /auth/me` require `Authorization: Bearer <access_token>` (JWT issued
+    by `/auth/login` and `/auth/refresh`). On authenticated routes the server
+    re-reads the account state from the database on every request, so a
+    suspension applies immediately (403 `ACCOUNT_SUSPENDED`) even while the
+    access token is still valid.
+
+    **Error codes used by these endpoints**
+
+    | HTTP | Code | Meaning |
+    |------|------|---------|
+    | 400 | `VALIDATION_ERROR` | One or more fields invalid (`details` = field violations) |
+    | 400 | `INVALID_JSON` | Malformed JSON body, or more than one JSON object |
+    | 400 | `OTP_INVALID` | Code wrong, expired, or already used |
+    | 400 | `REFRESH_TOKEN_REQUIRED` | `refresh_token` missing from body |
+    | 400 | `RESET_TOKEN_REQUIRED` | `reset_token` missing from body |
+    | 401 | `UNAUTHORIZED` | Missing/invalid/expired bearer token |
+    | 401 | `INVALID_CREDENTIALS` | Wrong phone or password (identical for both, no enumeration) |
+    | 401 | `SESSION_INVALID` | Refresh token unknown, revoked, or expired |
+    | 401 | `RESET_TOKEN_INVALID` | Reset token invalid or expired (>15 min or already used) |
+    | 403 | `PHONE_NOT_VERIFIED` | Login attempted before OTP verification |
+    | 403 | `ACCOUNT_PENDING_APPROVAL` | Account not active (also returned by refresh for rejected/suspended accounts) |
+    | 403 | `ACCOUNT_REJECTED` | Account administratively rejected |
+    | 403 | `ACCOUNT_SUSPENDED` | Account suspended/inactive — also blocks every authenticated route |
+    | 404 | `RESOURCE_NOT_FOUND` | Authenticated user no longer exists |
+    | 409 | `ACCOUNT_ALREADY_EXISTS` | Phone number already registered |
+    | 413 | `PAYLOAD_TOO_LARGE` | JSON body > 1 MB |
+    | 423 | `ACCOUNT_LOCKED` | Login temporarily blocked after 5 failed attempts in 15 minutes |
+    | 429 | `OTP_ATTEMPTS_EXCEEDED` | ≥ 3 verification attempts against one code |
+    | 429 | `OTP_RESEND_TOO_SOON` | New code requested within the 60 s resend cooldown |
+    | 429 | `OTP_RESEND_LIMIT` | > 5 code requests within the 5-minute OTP window |
+    | 500 | `INTERNAL_ERROR` | Unexpected server error (detail logged, never returned) |
+
+    **Operational notes**
+    - Unknown paths under `/api/v1` return the JSON 404 envelope with code
+      `ENDPOINT_NOT_FOUND`. Wrong HTTP methods on a registered path return
+      Go's default plain-text `405 Method Not Allowed` (not the JSON envelope).
+    - CORS: only origins listed in `CORS_ORIGINS` are allowed; preflight
+      `OPTIONS` answers `204`, disallowed origins answer `403 FORBIDDEN`.
+      Credentials are never used (Bearer tokens only).
+    - **SMS is a development adapter**: OTP codes are rendered into the server
+      log, not really delivered to a phone. Real SMS is not claimed.
+    - **Demo phone verification (gated, development only):** when the server
+      starts with `DEMO_PHONE_VERIFICATION=true`, the freshly generated OTP is
+      echoed in the registration and `POST /auth/otp/request` responses as
+      `dev_otp_code`, so a local demo can complete phone verification without
+      any SMS provider. The code stays random, single-use and hashed at rest
+      (TTL and attempt limits unchanged); there is no universal code. The
+      server **refuses to start** in production (`APP_ENV=production`) while
+      this flag is enabled. The field is absent in every other configuration.
+    - **Password policy** (min 8 / max 128 chars, must contain letters and
+      digits) is an implementation decision — the SRS does not specify one.
+    - **Sprint 1 MVP registration contract (approved requirement):** citizen
+      registration takes exactly three fields — `full_name`, `phone_number`,
+      `password`. No national ID is required at registration (the optional
+      identity flow uses `POST /account/verification` afterwards) and citizens
+      need **no admin approval**: consumer accounts are created `active` and
+      become login-eligible right after OTP verification. Providers and admins
+      keep the approval workflow unchanged. Legacy clients that still send
+      `id_number` / `usage_types` are unaffected: those keys are ignored.
+      The identity document is uploaded separately afterwards (not part of
+      this auth document).
+    - Free-text fields are sanitized server-side (control characters and
+      `<`/`>` removed); phone numbers are normalized to the Yemeni local form
+      `7XXXXXXXX` (accepts `7XXXXXXXX`, `07XXXXXXXX`, `+9677XXXXXXXX`,
+      `009677XXXXXXXX`).
+
+    **OTP parameters (SRS NFR-SEC-03/04, FR-AUTH-01):** 6-digit code (default),
+    valid 5 minutes, resend cooldown 60 s, max 5 requests per window,
+    max 3 verification attempts per code. Codes are stored hashed.
+
+    **Session parameters:** access token JWT valid 15 minutes
+    (`expires_in` seconds), refresh token opaque, valid 14 days, rotating
+    (each refresh revokes the previous token), revocable server-side.
+
+    **Lockout:** 5 failed logins per phone within 15 minutes → 423
+    `ACCOUNT_LOCKED` for the remainder of the window.
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server (HTTP_ADDR=:8080, API_BASE_PATH=/api/v1)
+
+tags:
+  - name: auth
+    description: Registration, OTP phone verification, login/session lifecycle, password recovery.
+
+paths:
+  /auth/register/consumer:
+    post:
+      tags: [auth]
+      operationId: registerConsumer
+      summary: Register a consumer account
+      description: |
+        Creates a CITIZEN account with status **`active`** (no admin approval
+        for citizen self-registration — Sprint 1 MVP), role `consumer`, and
+        automatically dispatches the registration OTP
+        (`next_step: verify_otp`). The phone is not yet verified: the client
+        must call `POST /auth/otp/verify` with purpose `register`; only then
+        does `POST /auth/login` succeed for this account.
+
+        **Exactly three fields** are accepted (Sprint 1 MVP): `full_name`,
+        `phone_number`, `password`. Any extra keys (e.g. legacy `id_number` or
+        `usage_types`) are ignored, never validated, never stored. Duplicate
+        phone numbers yield 409 `ACCOUNT_ALREADY_EXISTS`.
+
+        If the registration OTP SMS cannot be dispatched, the registration
+        still succeeds (the account exists): the response carries
+        `next_step: request_otp` and the client must call
+        `POST /auth/otp/request` — never register again (409).
+
+        With the gated `DEMO_PHONE_VERIFICATION=true` configuration
+        (development/demo only; refused in production) the response also
+        carries `dev_otp_code` — the freshly generated code — so the demo can
+        complete verification without SMS.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterConsumerRequest'
+            example:
+              full_name: أحمد صالح
+              phone_number: '771234567'
+              password: Pass1234
+      responses:
+        '201':
+          description: |
+            Account created. `next_step: verify_otp` when the registration OTP
+            was dispatched; `next_step: request_otp` when the SMS dispatch
+            failed — the account exists and the client must call
+            `POST /auth/otp/request` (registering again would hit 409).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/register/provider:
+    post:
+      tags: [auth]
+      operationId: registerProvider
+      summary: Register a gas-provider account
+      description: |
+        Creates a provider account with status `pending_approval`, role
+        `provider`, its provider profile and first location, and automatically
+        dispatches the registration OTP (`next_step: verify_otp`). After OTP
+        verification the account still requires **admin approval** before
+        login succeeds (403 `ACCOUNT_PENDING_APPROVAL` until then).
+
+        `end_time` must be later than `start_time` (SRS 1.2 scenario 3).
+        Duplicates: the same phone number yields 409 `ACCOUNT_ALREADY_EXISTS`.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterProviderRequest'
+            example:
+              full_name: محمد أحمد
+              phone_number: '733123456'
+              password: Pass1234
+              provider_name: محطة الغاز اليمنية
+              provider_description: توريد وتعبئة أسطوانات الغاز المنزلي
+              start_time: '08:00'
+              end_time: '16:00'
+              city: صنعاء
+              district: المعلاسي
+              street: شارع الستين
+      responses:
+        '201':
+          description: |
+            Account created. `next_step: verify_otp` when the registration OTP
+            was dispatched; `next_step: request_otp` when the SMS dispatch
+            failed — the account exists and the client must call
+            `POST /auth/otp/request` (registering again would hit 409).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/otp/request:
+    post:
+      tags: [auth]
+      operationId: requestOtp
+      summary: Request an OTP verification code
+      description: |
+        Generates a one-time code and dispatches it by SMS (development
+        adapter: the code is written to the server log). One live code per
+        (phone, purpose): a new request invalidates the previous code.
+
+        Throttling: at least 60 s between requests for the same phone+purpose
+        (429 `OTP_RESEND_TOO_SOON`) and at most 5 requests per 5-minute window
+        (429 `OTP_RESEND_LIMIT`). Requests rejected by the cooldown still count
+        toward the window limit.
+
+        Registration normally dispatches its OTP automatically — this endpoint
+        is for resends or for starting password recovery indirectly (purpose
+        `password_reset` is also issued by `POST /auth/forgot-password`).
+
+        When the SMS dispatch fails, the undelivered code is discarded, so an
+        immediate retry is not blocked by the resend cooldown (the per-window
+        limit still applies).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequest'
+            example:
+              phone_number: '771234567'
+              purpose: register
+      responses:
+        '200':
+          description: Code dispatched (or already-throttled request counted).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpSentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/otp/verify:
+    post:
+      tags: [auth]
+      operationId: verifyOtp
+      summary: Verify an OTP code
+      description: |
+        Checks the code for (phone, purpose) and applies the purpose side
+        effect:
+        - `register` → marks the phone verified (`phone_verified: true`). The
+          account stays `pending_approval` until an admin decision.
+        - `password_reset` → returns a one-time `reset_token` (JWT, valid
+          15 minutes) that authorizes exactly one password change through
+          `POST /auth/reset-password`. Only accounts that exist receive one.
+
+        A code is consumed on success. At most 3 attempts per code: the third
+        wrong attempt (or any attempt after the limit) returns 429
+        `OTP_ATTEMPTS_EXCEEDED`; a new code must be requested.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+            example:
+              phone_number: '771234567'
+              purpose: register
+              code: '483920'
+      responses:
+        '200':
+          description: Code accepted; purpose side effect applied.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpVerifiedResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Sign in with phone and password
+      description: |
+        Authenticates `phone_number` + `password` and, on success, issues an
+        access/refresh token pair plus a revocable server-side session.
+
+        Account-state gate (SRS FR-AUTH-02 / URS 1.3):
+        - phone not verified → 403 `PHONE_NOT_VERIFIED`
+        - `pending_approval` → 403 `ACCOUNT_PENDING_APPROVAL`
+        - `rejected` → 403 `ACCOUNT_REJECTED`
+        - `suspended` / inactive → 403 `ACCOUNT_SUSPENDED`
+        - `active` → 200 with tokens
+
+        Sprint 1 MVP: consumer (citizen) accounts are created `active`, so a
+        citizen signs in immediately after OTP verification. The
+        `pending_approval` gate applies to provider/admin accounts, which keep
+        the admin-approval workflow unchanged.
+
+        Lockout: 5 failed attempts per phone within 15 minutes → 423
+        `ACCOUNT_LOCKED` for the rest of the window (unknown phones are
+        counted too, preventing account enumeration).
+
+        `user.dashboard` carries the post-login route for the client
+        (SRS FR-AUTH-02).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              phone_number: '771234567'
+              password: Pass1234
+      responses:
+        '200':
+          description: Authenticated; token pair issued.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refresh
+      summary: Exchange a refresh token for a new token pair
+      description: |
+        Rotates the session: the presented `refresh_token` is revoked and a
+        new access+refresh pair is issued. Reuse of an already-rotated token
+        fails with 401 `SESSION_INVALID`. Refresh tokens are opaque and stored
+        hashed; they expire 14 days after issue.
+
+        If the account is no longer `active` (pending/rejected/suspended), the
+        request fails with 403 `ACCOUNT_PENDING_APPROVAL` (the same code is
+        reused for all non-active states).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refresh_token: 3f6c1e0f5b7d4a2c9e8b1a0d4f5e6a7b
+      responses:
+        '200':
+          description: Session rotated; new token pair issued.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Sign out (revoke sessions)
+      description: |
+        Requires a valid access token. Revocation rules:
+        - body with `refresh_token` → only that session is revoked;
+        - empty body → **every** session of the caller is revoked
+          (SRS FR-AUTH-03).
+
+        An empty body (or `{}`) revokes **every** session of the caller
+        (SRS FR-AUTH-03). Malformed JSON or trailing content is rejected with
+        400 `INVALID_JSON` — it is never silently treated as logout-all.
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Session(s) revoked.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoggedOutResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      summary: Start password recovery
+      description: |
+        Always answers `200` for any well-formed phone number — known or
+        unknown — to prevent account enumeration. When the phone exists, a
+        `password_reset` OTP is dispatched (same throttling as
+        `POST /auth/otp/request`).
+
+        Next step: `POST /auth/otp/verify` with purpose `password_reset` to
+        obtain a `reset_token`.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              phone_number: '771234567'
+      responses:
+        '200':
+          description: Recovery accepted (response is identical for unknown phones).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: Set a new password with a reset token
+      description: |
+        Exchanges the one-time `reset_token` (from OTP verification with
+        purpose `password_reset`, valid 15 minutes) for a new password. On
+        success **every** session of that user is revoked — a password change
+        implies a global sign-out.
+
+        The new password must satisfy the password policy (8–128 chars,
+        letters and digits — implementation decision).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              reset_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              new_password: NewPass123
+      responses:
+        '200':
+          description: Password updated; all sessions revoked.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordUpdatedResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Get the current authenticated user
+      description: |
+        Returns the authenticated user's public profile (never includes
+        password hashes or OTP data). Reachable by every role, including
+        `pending_approval` and `rejected` accounts (so the client can render
+        status screens); `suspended`/inactive accounts are blocked with 403.
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+      responses:
+        '200':
+          description: Current user.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token issued by `/auth/login` or `/auth/refresh`
+        (`Authorization: Bearer <access_token>`), valid 15 minutes.
+
+  parameters:
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 64
+        pattern: '^[A-Za-z0-9._-]+$'
+      description: |
+        Optional client correlation id (1–64 chars, `[A-Za-z0-9._-]`).
+        Echoed on the response; otherwise the server generates a UUID.
+
+  headers:
+    XRequestId:
+      description: Correlation id of this request (client-supplied or generated).
+      schema:
+        type: string
+
+  schemas:
+    Error:
+      type: object
+      description: Standard error envelope body (always nested under `error`).
+      required: [code, message, message_ar]
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code (see the table in the API description).
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable English message.
+          example: One or more fields are invalid.
+        message_ar:
+          type: string
+          description: Human-readable Arabic message (SRS NFR-USA-02).
+          example: بعض الحقول غير صالحة.
+        request_id:
+          type: string
+          description: Correlation id (equals the `X-Request-Id` response header); omitted when absent.
+          example: 6f1d2c3a-9b8e-4f0a-a1d2-3c4b5e6f7a8b
+        details:
+          description: |
+            Optional extra context. On `VALIDATION_ERROR` it is an array of
+            field violations (see `FieldViolation`).
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldViolation'
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+
+    FieldViolation:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: JSON field name (dot path for nested inputs, if any).
+          example: phone_number
+        message:
+          type: string
+          description: Combined English / Arabic violation message.
+          example: Enter a valid Yemeni phone number. / يرجى إدخال رقم هاتف يمني صحيح.
+
+    User:
+      type: object
+      description: Public user representation (never includes hashes or OTP data).
+      required:
+        [id, full_name, phone_number, role, status, verification_status,
+         phone_verified, created_at, dashboard]
+      properties:
+        id:
+          type: integer
+          format: uint32
+          example: 42
+        full_name:
+          type: string
+          example: أحمد صالح
+        phone_number:
+          type: string
+          description: Canonical Yemeni local form `7XXXXXXXX`.
+          example: '771234567'
+        role:
+          type: string
+          enum: [consumer, provider, driver, admin]
+          description: '`driver` is reserved for Sprint 2+.'
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        phone_verified:
+          type: boolean
+          description: True once the registration OTP has been verified.
+        id_number:
+          type: string
+          nullable: true
+          description: Present when captured at registration (consumers).
+          example: '0102010101'
+        id_image_url:
+          type: string
+          nullable: true
+          description: Set when an identity document has been attached.
+        created_at:
+          type: string
+          format: date-time
+        dashboard:
+          type: string
+          enum: ['/home', '/provider/dashboard', '/admin', '/driver']
+          description: Post-login route for the client (SRS FR-AUTH-02).
+
+    AccountStatus:
+      type: string
+      enum: [pending_approval, active, rejected, suspended]
+
+    VerificationStatus:
+      type: string
+      enum: [unverified, pending_review, verified, rejected]
+
+    RegisterConsumerRequest:
+      type: object
+      description: |
+        Sprint 1 MVP citizen registration — exactly these three fields, no
+        national ID, no usage types. Unknown keys are ignored by the server.
+      required: [full_name, phone_number, password]
+      properties:
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+        password:
+          $ref: '#/components/schemas/Password'
+
+    RegisterProviderRequest:
+      type: object
+      required:
+        [full_name, phone_number, password, provider_name,
+         provider_description, start_time, end_time, city]
+      properties:
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+        password:
+          $ref: '#/components/schemas/Password'
+        provider_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        provider_description:
+          type: string
+          minLength: 2
+          maxLength: 500
+        start_time:
+          $ref: '#/components/schemas/HhMm'
+        end_time:
+          allOf:
+            - $ref: '#/components/schemas/HhMm'
+          description: Must be later than `start_time` (SRS 1.2 scenario 3).
+        city:
+          type: string
+          description: Required (SRS FR-PRV-03).
+        district:
+          type: string
+        street:
+          type: string
+
+    OtpRequest:
+      type: object
+      required: [phone_number]
+      properties:
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+        purpose:
+          type: string
+          enum: [register, password_reset]
+          default: register
+          description: Other values (e.g. `login`) are rejected with 400 `VALIDATION_ERROR`.
+
+    OtpVerifyRequest:
+      type: object
+      required: [phone_number, code]
+      properties:
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+        purpose:
+          type: string
+          enum: [register, password_reset]
+          default: register
+        code:
+          type: string
+          description: The code received by SMS (default 6 digits). Compared as a hash; trimmed of surrounding space.
+
+    LoginRequest:
+      type: object
+      required: [phone_number, password]
+      properties:
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+        password:
+          type: string
+          description: Required, non-empty (policy is enforced at registration/reset, not at login).
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          description: Opaque rotating refresh token from login/refresh.
+
+    LogoutRequest:
+      type: object
+      description: Optional. Omit (or send `{}`) to revoke every session of the caller.
+      properties:
+        refresh_token:
+          type: string
+          description: When present, only this session is revoked.
+
+    ForgotPasswordRequest:
+      type: object
+      required: [phone_number]
+      properties:
+        phone_number:
+          $ref: '#/components/schemas/Phone'
+
+    ResetPasswordRequest:
+      type: object
+      required: [reset_token, new_password]
+      properties:
+        reset_token:
+          type: string
+          description: One-time token from OTP verification with purpose `password_reset` (valid 15 minutes).
+        new_password:
+          $ref: '#/components/schemas/Password'
+
+    Phone:
+      type: string
+      description: |
+        Yemeni phone number. Accepted input formats: `7XXXXXXXX`,
+        `07XXXXXXXX`, `+9677XXXXXXXX`, `009677XXXXXXXX` — normalized
+        server-side to `7XXXXXXXX`.
+      examples: ['771234567', '+967733123456']
+
+    Password:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 128
+      description: |
+        Must contain letters and digits (Arabic letters count as letters).
+        Implementation decision — not specified in the SRS.
+
+    HhMm:
+      type: string
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+      description: 24-hour local time (SRS NFR-DAT-01).
+      example: '08:00'
+
+    TokenResponse:
+      type: object
+      description: Login/refresh payload.
+      required: [access_token, refresh_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (15-minute default validity).
+        refresh_token:
+          type: string
+          description: Opaque rotating refresh token (14-day default validity; stored hashed server-side).
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          format: int32
+          description: Seconds until the access token expires (default 900).
+          example: 900
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegistrationResponse:
+      type: object
+      required: [user, next_step, message, message_ar]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        next_step:
+          type: string
+          enum: [verify_otp, request_otp]
+          description: |
+            `verify_otp` — the registration OTP was dispatched; call
+            `POST /auth/otp/verify` (purpose `register`).
+            `request_otp` — the account was created but the OTP SMS could not
+            be sent; call `POST /auth/otp/request` (do NOT register again —
+            the account already exists).
+        message:
+          type: string
+        message_ar:
+          type: string
+        dev_otp_code:
+          type: string
+          pattern: '^[0-9]{4,10}$'
+          description: |
+            PRESENT ONLY with the gated `DEMO_PHONE_VERIFICATION=true`
+            development/demo configuration (the server refuses to start in
+            production with it). Contains the freshly generated registration
+            code so a local demo can call `POST /auth/otp/verify` without any
+            SMS provider. Never a universal code: it is random per request,
+            single-use, hashed at rest, TTL/attempt limited. Absent otherwise.
+
+    OtpSentResponse:
+      type: object
+      required: [status, purpose, message, message_ar]
+      properties:
+        status:
+          type: string
+          enum: [otp_sent]
+        purpose:
+          type: string
+          enum: [register, password_reset]
+        message:
+          type: string
+        message_ar:
+          type: string
+        dev_otp_code:
+          type: string
+          pattern: '^[0-9]{4,10}$'
+          description: |
+            PRESENT ONLY with the gated `DEMO_PHONE_VERIFICATION=true`
+            development/demo configuration (refused in production). Carries the
+            freshly generated code for this request (random, single-use,
+            hashed at rest). Absent otherwise.
+
+    OtpVerifiedResponse:
+      type: object
+      required: [verified, purpose, phone_verified, message, message_ar]
+      properties:
+        verified:
+          type: boolean
+          enum: [true]
+        purpose:
+          type: string
+          enum: [register, password_reset]
+        phone_verified:
+          type: boolean
+          description: True only when purpose is `register`.
+        reset_token:
+          type: string
+          description: Present only for purpose `password_reset`; single-use, valid 15 minutes.
+        message:
+          type: string
+        message_ar:
+          type: string
+
+    LoggedOutResponse:
+      type: object
+      required: [status, message, message_ar]
+      properties:
+        status:
+          type: string
+          enum: [logged_out]
+        message:
+          type: string
+        message_ar:
+          type: string
+
+    ForgotPasswordResponse:
+      type: object
+      required: [status, message, message_ar]
+      properties:
+        status:
+          type: string
+          enum: [otp_sent]
+        message:
+          type: string
+        message_ar:
+          type: string
+
+    PasswordUpdatedResponse:
+      type: object
+      required: [status, message, message_ar]
+      properties:
+        status:
+          type: string
+          enum: [password_updated]
+        message:
+          type: string
+        message_ar:
+          type: string
+
+  responses:
+    BadRequest:
+      description: |
+        400 — `VALIDATION_ERROR` (see `details` for field violations),
+        `INVALID_JSON`, `OTP_INVALID`, `REFRESH_TOKEN_REQUIRED`,
+        `RESET_TOKEN_REQUIRED`.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Unauthorized:
+      description: |
+        401 — `UNAUTHORIZED` (missing/invalid bearer token),
+        `INVALID_CREDENTIALS` (login), `SESSION_INVALID` (refresh),
+        `RESET_TOKEN_INVALID` (reset password).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Forbidden:
+      description: |
+        403 — `PHONE_NOT_VERIFIED` (login), `ACCOUNT_PENDING_APPROVAL`
+        (login; also refresh for any non-active account),
+        `ACCOUNT_REJECTED` (login), `ACCOUNT_SUSPENDED` (login and every
+        authenticated route for suspended/inactive accounts).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    NotFound:
+      description: 404 — `RESOURCE_NOT_FOUND` (the authenticated user no longer exists).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Conflict:
+      description: 409 — `ACCOUNT_ALREADY_EXISTS` (phone number or ID number already registered).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    PayloadTooLarge:
+      description: 413 — `PAYLOAD_TOO_LARGE` (JSON body exceeds 1 MB).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Locked:
+      description: 423 — `ACCOUNT_LOCKED` (5 failed logins within 15 minutes).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    TooManyRequests:
+      description: |
+        429 — `OTP_ATTEMPTS_EXCEEDED` (≥ 3 wrong attempts for one code),
+        `OTP_RESEND_TOO_SOON` (60 s cooldown), `OTP_RESEND_LIMIT`
+        (> 5 requests per 5-minute window).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    InternalServerError:
+      description: 500 — `INTERNAL_ERROR` (unexpected failure; details are logged, never returned).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+security:
+  - bearerAuth: []

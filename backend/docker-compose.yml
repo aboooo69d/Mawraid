@@ -1,0 +1,48 @@
+# Mawarid backend — local development services (PostgreSQL + Redis)
+#
+# Usage (from this directory):
+#   docker compose up -d
+#   docker compose down        # stop (data persists in named volumes)
+#   docker compose down -v     # stop AND delete data volumes (destructive!)
+#
+# The Go API itself runs on the host (see README.md), connecting to:
+#   postgres://mawarid:mawarid_dev_password@localhost:5432/mawarid?sslmode=disable
+#   redis://localhost:6379/0
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mawarid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mawarid
+      POSTGRES_PASSWORD: mawarid_dev_password
+      POSTGRES_DB: mawarid
+    ports:
+      - "5432:5432"
+    volumes:
+      - mawarid_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mawarid -d mawarid"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: mawarid-redis
+    restart: unless-stopped
+    # No password on the dev loopback binding; production must set one.
+    ports:
+      - "6379:6379"
+    volumes:
+      - mawarid_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mawarid_pgdata:
+  mawarid_redisdata:
