@@ -63,6 +63,7 @@ const (
 	ErrMainUnitExists      = 1608
 	ErrDuplicateUnitName   = 1609
 	ErrUnitHasTransactions = 1610
+	ErrStockAlreadyExists  = 1611
 )
 
 const (

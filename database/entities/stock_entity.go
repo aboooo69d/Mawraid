@@ -12,7 +12,7 @@ type Stock struct {
 	StockTypeID uint      `gorm:"not null;index"`
 	StockType   StockType `gorm:"foreignKey:StockTypeID"`
 	Units       []Unit    `gorm:"foreignKey:StockID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	UserID      uuid.UUID `gorm:"type:uuid;not null;index"`
+	UserID      uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
 	User        User      `gorm:"foreignKey:UserID"`
 }
 

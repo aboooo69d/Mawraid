@@ -2,9 +2,14 @@ package stockRepo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/najm-x/nova/database/entities"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrStockAlreadyExists = errors.New("user already has a stock")
 )
 
 type (
@@ -12,6 +17,7 @@ type (
 		CreateStock(c context.Context, stock *entities.Stock) error
 		GetStockById(c context.Context, id string) (*entities.Stock, error)
 		GetStockByUserId(c context.Context, userId string) (entities.Stock, error)
+		UserHasStock(c context.Context, userId string) (bool, error)
 		StockTypeExists(c context.Context, id uint) (bool, error)
 		UpdateStock(c context.Context, id string, stock *entities.Stock) error
 		DeleteStock(c context.Context, id string) error
@@ -77,6 +83,15 @@ func (r *stockRepo) GetStockByUserId(c context.Context, userId string) (entities
 		db.Order("is_main DESC, rate ASC")
 		return nil
 	}).Where("user_id = ?", userId).First(c)
+}
+
+func (r *stockRepo) UserHasStock(c context.Context, userId string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(c).
+		Model(&entities.Stock{}).
+		Where("user_id = ?", userId).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *stockRepo) StockTypeExists(c context.Context, id uint) (bool, error) {

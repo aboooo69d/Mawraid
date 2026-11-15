@@ -22,6 +22,7 @@ var (
 	ErrMainUnitExists      = &respons.AppError{Status: 400, Code: errsCode.ErrMainUnitExists, Message: "stock already has a main unit"}
 	ErrDuplicateUnitName   = &respons.AppError{Status: 409, Code: errsCode.ErrDuplicateUnitName, Message: "a unit with this name already exists in the stock"}
 	ErrUnitHasTransactions = &respons.AppError{Status: 409, Code: errsCode.ErrUnitHasTransactions, Message: "cannot change rate of a unit that has transactions"}
+	ErrStockAlreadyExists  = &respons.AppError{Status: 409, Code: errsCode.ErrStockAlreadyExists, Message: "user already has a stock"}
 )
 
 // ==================== Stock Type ====================
@@ -72,7 +73,6 @@ type UnitBalance struct {
 // ==================== Stock ====================
 
 type CreateStockRequest struct {
-	ID          *uuid.UUID          `json:"id" binding:"omitempty"`
 	StockTypeID uint                `json:"stock_type_id" binding:"required"`
 	Units       []CreateUnitRequest `json:"units" binding:"required,min=1,dive"`
 }
