@@ -15,8 +15,11 @@ import (
 	authRouter "github.com/najm-x/nova/modules/auth/router"
 	authService "github.com/najm-x/nova/modules/auth/service"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
+	stockRepo "github.com/najm-x/nova/modules/stock/repo"
+	stockService "github.com/najm-x/nova/modules/stock/service"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
 	userService "github.com/najm-x/nova/modules/user/service"
+
 	"github.com/najm-x/nova/pkg/database"
 	smsSender "github.com/najm-x/nova/pkg/sms_sender"
 	"github.com/najm-x/nova/pkg/storage"
@@ -40,14 +43,17 @@ type AppContainer struct {
 	SmsProvider smsSender.Provider
 
 	// Repositories
-	UserRepo userRepo.UserRepo
-	RoleRepo roleRepo.RoleRepo
-	OtpRepo  authRepo.OtpRepo
-
+	UserRepo        userRepo.UserRepo
+	RoleRepo        roleRepo.RoleRepo
+	OtpRepo         authRepo.OtpRepo
+	UnitRepo        stockRepo.UnitRepo
+	TransactionRepo stockRepo.TransactionRepo
+	StockRepo       stockRepo.StockRepo
 	// Services
-	OtpService  authService.OtpService
-	AuthService authService.AuthService
-	UserService userService.UserService
+	OtpService   authService.OtpService
+	AuthService  authService.AuthService
+	UserService  userService.UserService
+	StockService stockService.StockService
 
 	// Handlers
 	AuthHandler *authHandler.AuthHandler
@@ -99,11 +105,15 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	uRepo := userRepo.NewUserRepo(db)
 	rRepo := roleRepo.NewRoleRepo(db)
 	oRepo := authRepo.NewOtpRepo(rdb)
+	unitRepo := stockRepo.NewUnitRepo(db)
+	tRepo := stockRepo.NewTransactionRepo(db)
+	stockRepo := stockRepo.NewStockRepo(db)
 
 	// 8. Services
 	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
+	sService := stockService.NewStockService(stockRepo, unitRepo, tRepo)
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
@@ -117,13 +127,17 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		SmsProvider: smsClient,
 		Store:       store,
 
-		UserRepo: uRepo,
-		RoleRepo: rRepo,
-		OtpRepo:  oRepo,
+		UserRepo:        uRepo,
+		RoleRepo:        rRepo,
+		OtpRepo:         oRepo,
+		UnitRepo:        unitRepo,
+		TransactionRepo: tRepo,
+		StockRepo:       stockRepo,
 
-		OtpService:  oService,
-		AuthService: aService,
-		UserService: uService,
+		OtpService:   oService,
+		AuthService:  aService,
+		UserService:  uService,
+		StockService: sService,
 
 		AuthHandler: aHandler,
 	}, nil
