@@ -37,7 +37,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest"
+                            "$ref": "#/definitions/dto.ForgetPasswordRequest"
                         }
                     }
                 ],
@@ -45,19 +45,19 @@
                     "200": {
                         "description": "Reset key sent (if account exists)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -83,7 +83,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.UserLoginRequest"
+                            "$ref": "#/definitions/dto.UserLoginRequest"
                         }
                     }
                 ],
@@ -93,13 +93,13 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                                    "$ref": "#/definitions/respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.UserResponseBase"
+                                            "$ref": "#/definitions/dto.UserResponseBase"
                                         }
                                     }
                                 }
@@ -109,25 +109,25 @@
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "403": {
                         "description": "Account not verified or not active",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "404": {
                         "description": "Account not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -150,13 +150,13 @@
                     "200": {
                         "description": "Logged in successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "500": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -266,13 +266,13 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                                    "$ref": "#/definitions/respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.ConsumerResponse"
+                                            "$ref": "#/definitions/dto.ConsumerResponse"
                                         }
                                     }
                                 }
@@ -282,19 +282,19 @@
                     "400": {
                         "description": "Invalid request or validation error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "409": {
                         "description": "Phone number already registered",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -320,7 +320,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.CreateProviderRequest"
+                            "$ref": "#/definitions/dto.CreateProviderRequest"
                         }
                     }
                 ],
@@ -330,13 +330,13 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                                    "$ref": "#/definitions/respons.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_najm-x_nova_modules_user_dto.ProviderResponse"
+                                            "$ref": "#/definitions/dto.ProviderResponse"
                                         }
                                     }
                                 }
@@ -346,19 +346,19 @@
                     "400": {
                         "description": "Invalid request or missing profile data",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "409": {
                         "description": "Phone number already registered",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -384,7 +384,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest"
+                            "$ref": "#/definitions/dto.RestPasswordRequest"
                         }
                     }
                 ],
@@ -392,31 +392,31 @@
                     "200": {
                         "description": "Password reset successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "403": {
                         "description": "Invalid or expired reset key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -442,7 +442,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest"
+                            "$ref": "#/definitions/dto.VerifyPhoneRequest"
                         }
                     }
                 ],
@@ -450,31 +450,529 @@
                     "200": {
                         "description": "Phone verified successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request or invalid OTP code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "404": {
                         "description": "Account not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "409": {
                         "description": "Account is already verified",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
                         }
                     },
                     "429": {
                         "description": "Rate limit exceeded (cooldown / max attempts)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Response"
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/stocks": {
+            "get": {
+                "description": "Returns a paginated list of stocks owned by the authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "List user stocks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stocks retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.StockResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid pagination parameters",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "Create a new stock",
+                "parameters": [
+                    {
+                        "description": "Stock creation payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateStockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stock created successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.StockResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or unit validation error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Stock type not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Duplicate unit name",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/stocks/{stock_id}": {
+            "get": {
+                "description": "Returns a stock's info, units, and available balance in every unit.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "Get stock details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock ID (UUID)",
+                        "name": "stock_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stock retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.StockResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Stock not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/stocks/{stock_id}/transactions": {
+            "get": {
+                "description": "Returns the paginated transaction history (newest first) for a stock.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "List stock transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock ID (UUID)",
+                        "name": "stock_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by direction (true = in, false = out)",
+                        "name": "is_in",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transactions retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.TransactionResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Stock not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds to (is_in = true) or withdraws from (is_in = false) the stock using one of its units.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "Create stock transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock ID (UUID)",
+                        "name": "stock_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Transaction payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateTransactionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction created successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.TransactionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request, invalid amount, or unit not in stock",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Stock not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Insufficient stock",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/stocks/{stock_id}/units": {
+            "post": {
+                "description": "Adds an extra (non-main) unit to an existing stock owned by the authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "Add unit to stock",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock ID (UUID)",
+                        "name": "stock_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unit creation payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateUnitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unit added successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UnitResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or main unit already exists",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Stock not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Duplicate unit name",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/stocks/{stock_id}/units/{unit_id}": {
+            "patch": {
+                "description": "Updates the name and/or rate of an existing unit in a stock.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stock"
+                ],
+                "summary": "Update stock unit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock ID (UUID)",
+                        "name": "stock_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Unit ID",
+                        "name": "unit_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unit update payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUnitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unit updated successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/respons.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UnitResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or invalid main unit rate",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Stock or unit not found",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Duplicate unit name or unit has transactions",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/respons.Response"
                         }
                     }
                 }
@@ -482,52 +980,7 @@
         }
     },
     "definitions": {
-        "github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest": {
-            "type": "object",
-            "required": [
-                "phone"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 9
-                }
-            }
-        },
-        "github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "rest_key"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "rest_key": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "phone"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 9
-                }
-            }
-        },
-        "github_com_najm-x_nova_modules_user_dto.ConsumerResponse": {
+        "dto.ConsumerResponse": {
             "type": "object",
             "properties": {
                 "business_file": {
@@ -589,7 +1042,7 @@
                 }
             }
         },
-        "github_com_najm-x_nova_modules_user_dto.CreateProviderRequest": {
+        "dto.CreateProviderRequest": {
             "type": "object",
             "required": [
                 "end_at",
@@ -624,7 +1077,84 @@
                 }
             }
         },
-        "github_com_najm-x_nova_modules_user_dto.ProviderResponse": {
+        "dto.CreateStockRequest": {
+            "type": "object",
+            "required": [
+                "stock_type_id",
+                "units"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "stock_type_id": {
+                    "type": "integer"
+                },
+                "units": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.CreateUnitRequest"
+                    }
+                }
+            }
+        },
+        "dto.CreateTransactionRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "is_in",
+                "unit_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "is_in": {
+                    "description": "pointer so `false` passes \"required\"",
+                    "type": "boolean"
+                },
+                "unit_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateUnitRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "rate"
+            ],
+            "properties": {
+                "is_main": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "rate": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "dto.ForgetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProviderResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -665,7 +1195,144 @@
                 }
             }
         },
-        "github_com_najm-x_nova_modules_user_dto.UserLoginRequest": {
+        "dto.RestPasswordRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "rest_key"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "rest_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StockResponse": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "description": "in the main unit",
+                    "type": "number"
+                },
+                "balances": {
+                    "description": "available in every unit",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UnitBalance"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/dto.StockTypeResponse"
+                },
+                "units": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UnitResponse"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StockTypeResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TransactionResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_in": {
+                    "type": "boolean"
+                },
+                "stock_id": {
+                    "type": "string"
+                },
+                "unit": {
+                    "$ref": "#/definitions/dto.UnitResponse"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UnitBalance": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UnitResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "is_main": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateUnitRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "rate": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "dto.UserLoginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -678,13 +1345,11 @@
                     "minLength": 8
                 },
                 "phone": {
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 9
+                    "type": "string"
                 }
             }
         },
-        "github_com_najm-x_nova_modules_user_dto.UserResponseBase": {
+        "dto.UserResponseBase": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -713,7 +1378,22 @@
                 }
             }
         },
-        "github_com_najm-x_nova_pkg_respons.AppError": {
+        "dto.VerifyPhoneRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "phone"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "respons.AppError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -724,7 +1404,7 @@
                 }
             }
         },
-        "github_com_najm-x_nova_pkg_respons.Meta": {
+        "respons.Meta": {
             "type": "object",
             "properties": {
                 "page": {
@@ -741,15 +1421,15 @@
                 }
             }
         },
-        "github_com_najm-x_nova_pkg_respons.Response": {
+        "respons.Response": {
             "type": "object",
             "properties": {
                 "data": {},
                 "error": {
-                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.AppError"
+                    "$ref": "#/definitions/respons.AppError"
                 },
                 "meta": {
-                    "$ref": "#/definitions/github_com_najm-x_nova_pkg_respons.Meta"
+                    "$ref": "#/definitions/respons.Meta"
                 },
                 "success": {
                     "type": "boolean"

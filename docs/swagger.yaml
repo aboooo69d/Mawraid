@@ -1,37 +1,6 @@
 basePath: /api/v1
 definitions:
-  github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest:
-    properties:
-      phone:
-        maxLength: 20
-        minLength: 9
-        type: string
-    required:
-    - phone
-    type: object
-  github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest:
-    properties:
-      password:
-        type: string
-      rest_key:
-        type: string
-    required:
-    - password
-    - rest_key
-    type: object
-  github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest:
-    properties:
-      code:
-        type: string
-      phone:
-        maxLength: 20
-        minLength: 9
-        type: string
-    required:
-    - code
-    - phone
-    type: object
-  github_com_najm-x_nova_modules_user_dto.ConsumerResponse:
+  dto.ConsumerResponse:
     properties:
       business_file:
         type: string
@@ -72,7 +41,7 @@ definitions:
       vehicle_type:
         type: string
     type: object
-  github_com_najm-x_nova_modules_user_dto.CreateProviderRequest:
+  dto.CreateProviderRequest:
     properties:
       description:
         maxLength: 1000
@@ -98,7 +67,60 @@ definitions:
     - phone
     - start_at
     type: object
-  github_com_najm-x_nova_modules_user_dto.ProviderResponse:
+  dto.CreateStockRequest:
+    properties:
+      id:
+        type: string
+      stock_type_id:
+        type: integer
+      units:
+        items:
+          $ref: '#/definitions/dto.CreateUnitRequest'
+        minItems: 1
+        type: array
+    required:
+    - stock_type_id
+    - units
+    type: object
+  dto.CreateTransactionRequest:
+    properties:
+      amount:
+        type: integer
+      description:
+        maxLength: 1000
+        type: string
+      is_in:
+        description: pointer so `false` passes "required"
+        type: boolean
+      unit_id:
+        type: integer
+    required:
+    - amount
+    - is_in
+    - unit_id
+    type: object
+  dto.CreateUnitRequest:
+    properties:
+      is_main:
+        type: boolean
+      name:
+        maxLength: 50
+        type: string
+      rate:
+        minimum: 1
+        type: integer
+    required:
+    - name
+    - rate
+    type: object
+  dto.ForgetPasswordRequest:
+    properties:
+      phone:
+        type: string
+    required:
+    - phone
+    type: object
+  dto.ProviderResponse:
     properties:
       created_at:
         type: string
@@ -125,21 +147,110 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_najm-x_nova_modules_user_dto.UserLoginRequest:
+  dto.RestPasswordRequest:
+    properties:
+      password:
+        type: string
+      rest_key:
+        type: string
+    required:
+    - password
+    - rest_key
+    type: object
+  dto.StockResponse:
+    properties:
+      available:
+        description: in the main unit
+        type: number
+      balances:
+        description: available in every unit
+        items:
+          $ref: '#/definitions/dto.UnitBalance'
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      type:
+        $ref: '#/definitions/dto.StockTypeResponse'
+      units:
+        items:
+          $ref: '#/definitions/dto.UnitResponse'
+        type: array
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.StockTypeResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  dto.TransactionResponse:
+    properties:
+      amount:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_in:
+        type: boolean
+      stock_id:
+        type: string
+      unit:
+        $ref: '#/definitions/dto.UnitResponse'
+      user_id:
+        type: string
+    type: object
+  dto.UnitBalance:
+    properties:
+      amount:
+        type: number
+      unit:
+        type: string
+      unit_id:
+        type: integer
+    type: object
+  dto.UnitResponse:
+    properties:
+      id:
+        type: integer
+      is_main:
+        type: boolean
+      name:
+        type: string
+      rate:
+        type: integer
+    type: object
+  dto.UpdateUnitRequest:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 1
+        type: string
+      rate:
+        minimum: 1
+        type: integer
+    type: object
+  dto.UserLoginRequest:
     properties:
       password:
         maxLength: 255
         minLength: 8
         type: string
       phone:
-        maxLength: 20
-        minLength: 9
         type: string
     required:
     - password
     - phone
     type: object
-  github_com_najm-x_nova_modules_user_dto.UserResponseBase:
+  dto.UserResponseBase:
     properties:
       created_at:
         type: string
@@ -158,14 +269,24 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_najm-x_nova_pkg_respons.AppError:
+  dto.VerifyPhoneRequest:
+    properties:
+      code:
+        type: string
+      phone:
+        type: string
+    required:
+    - code
+    - phone
+    type: object
+  respons.AppError:
     properties:
       code:
         type: integer
       message:
         type: string
     type: object
-  github_com_najm-x_nova_pkg_respons.Meta:
+  respons.Meta:
     properties:
       page:
         type: integer
@@ -176,13 +297,13 @@ definitions:
       total_pages:
         type: integer
     type: object
-  github_com_najm-x_nova_pkg_respons.Response:
+  respons.Response:
     properties:
       data: {}
       error:
-        $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.AppError'
+        $ref: '#/definitions/respons.AppError'
       meta:
-        $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Meta'
+        $ref: '#/definitions/respons.Meta'
       success:
         type: boolean
     type: object
@@ -211,22 +332,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_najm-x_nova_modules_auth_dto.ForgetPasswordRequest'
+          $ref: '#/definitions/dto.ForgetPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Reset key sent (if account exists)
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Request password reset
       tags:
       - Auth
@@ -241,7 +362,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.UserLoginRequest'
+          $ref: '#/definitions/dto.UserLoginRequest'
       produces:
       - application/json
       responses:
@@ -249,27 +370,27 @@ paths:
           description: Logged in successfully
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            - $ref: '#/definitions/respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.UserResponseBase'
+                  $ref: '#/definitions/dto.UserResponseBase'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "403":
           description: Account not verified or not active
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "404":
           description: Account not found
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Login user
       tags:
       - Auth
@@ -284,11 +405,11 @@ paths:
         "200":
           description: Logged in successfully
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "500":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Logout user
       tags:
       - Auth
@@ -364,23 +485,23 @@ paths:
           description: Registered successfully
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            - $ref: '#/definitions/respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.ConsumerResponse'
+                  $ref: '#/definitions/dto.ConsumerResponse'
               type: object
         "400":
           description: Invalid request or validation error
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "409":
           description: Phone number already registered
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Register a new consumer
       tags:
       - Auth
@@ -395,7 +516,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.CreateProviderRequest'
+          $ref: '#/definitions/dto.CreateProviderRequest'
       produces:
       - application/json
       responses:
@@ -403,23 +524,23 @@ paths:
           description: Registered successfully
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            - $ref: '#/definitions/respons.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_najm-x_nova_modules_user_dto.ProviderResponse'
+                  $ref: '#/definitions/dto.ProviderResponse'
               type: object
         "400":
           description: Invalid request or missing profile data
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "409":
           description: Phone number already registered
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Register a new provider
       tags:
       - Auth
@@ -434,30 +555,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_najm-x_nova_modules_auth_dto.RestPasswordRequest'
+          $ref: '#/definitions/dto.RestPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Password reset successfully
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "403":
           description: Invalid or expired reset key
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Reset password
       tags:
       - Auth
@@ -473,31 +594,344 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_najm-x_nova_modules_auth_dto.VerifyPhoneRequest'
+          $ref: '#/definitions/dto.VerifyPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Phone verified successfully
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "400":
           description: Invalid request or invalid OTP code
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "404":
           description: Account not found
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "409":
           description: Account is already verified
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
         "429":
           description: Rate limit exceeded (cooldown / max attempts)
           schema:
-            $ref: '#/definitions/github_com_najm-x_nova_pkg_respons.Response'
+            $ref: '#/definitions/respons.Response'
       summary: Verify phone with OTP
       tags:
       - Auth
+  /stocks:
+    get:
+      description: Returns a paginated list of stocks owned by the authenticated user.
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stocks retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.StockResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid pagination parameters
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: List user stocks
+      tags:
+      - Stock
+    post:
+      consumes:
+      - application/json
+      description: Create a stock for the authenticated user together with its units
+        (exactly one main unit with rate = 1).
+      parameters:
+      - description: Stock creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stock created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StockResponse'
+              type: object
+        "400":
+          description: Invalid request or unit validation error
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "404":
+          description: Stock type not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "409":
+          description: Duplicate unit name
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: Create a new stock
+      tags:
+      - Stock
+  /stocks/{stock_id}:
+    get:
+      description: Returns a stock's info, units, and available balance in every unit.
+      parameters:
+      - description: Stock ID (UUID)
+        in: path
+        name: stock_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stock retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StockResponse'
+              type: object
+        "404":
+          description: Stock not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: Get stock details
+      tags:
+      - Stock
+  /stocks/{stock_id}/transactions:
+    get:
+      description: Returns the paginated transaction history (newest first) for a
+        stock.
+      parameters:
+      - description: Stock ID (UUID)
+        in: path
+        name: stock_id
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by direction (true = in, false = out)
+        in: query
+        name: is_in
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.TransactionResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "404":
+          description: Stock not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: List stock transactions
+      tags:
+      - Stock
+    post:
+      consumes:
+      - application/json
+      description: Adds to (is_in = true) or withdraws from (is_in = false) the stock
+        using one of its units.
+      parameters:
+      - description: Stock ID (UUID)
+        in: path
+        name: stock_id
+        required: true
+        type: string
+      - description: Transaction payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TransactionResponse'
+              type: object
+        "400":
+          description: Invalid request, invalid amount, or unit not in stock
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "404":
+          description: Stock not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "409":
+          description: Insufficient stock
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: Create stock transaction
+      tags:
+      - Stock
+  /stocks/{stock_id}/units:
+    post:
+      consumes:
+      - application/json
+      description: Adds an extra (non-main) unit to an existing stock owned by the
+        authenticated user.
+      parameters:
+      - description: Stock ID (UUID)
+        in: path
+        name: stock_id
+        required: true
+        type: string
+      - description: Unit creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUnitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unit added successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UnitResponse'
+              type: object
+        "400":
+          description: Invalid request or main unit already exists
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "404":
+          description: Stock not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "409":
+          description: Duplicate unit name
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: Add unit to stock
+      tags:
+      - Stock
+  /stocks/{stock_id}/units/{unit_id}:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name and/or rate of an existing unit in a stock.
+      parameters:
+      - description: Stock ID (UUID)
+        in: path
+        name: stock_id
+        required: true
+        type: string
+      - description: Unit ID
+        in: path
+        name: unit_id
+        required: true
+        type: integer
+      - description: Unit update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUnitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unit updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/respons.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UnitResponse'
+              type: object
+        "400":
+          description: Invalid request or invalid main unit rate
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "404":
+          description: Stock or unit not found
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "409":
+          description: Duplicate unit name or unit has transactions
+          schema:
+            $ref: '#/definitions/respons.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/respons.Response'
+      summary: Update stock unit
+      tags:
+      - Stock
 swagger: "2.0"
