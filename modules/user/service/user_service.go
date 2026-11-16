@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
+	stockDto "github.com/najm-x/nova/modules/stock/dto"
 	"github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/modules/user/repo"
+	"github.com/najm-x/nova/pkg/respons"
 	"gorm.io/gorm"
 )
 
@@ -15,16 +18,19 @@ type (
 		GetUserById(c context.Context, id string) (*dto.UserResponseBase, error)
 		GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponseBase, error)
 		DeleteUser(c context.Context, id string) error
+		GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error)
 	}
 
 	userService struct {
-		userRepo repo.UserRepo
+		userRepo  repo.UserRepo
+		stockRepo repo.UserStockRepo
 	}
 )
 
-func NewUserService(userRepo repo.UserRepo) UserService {
+func NewUserService(userRepo repo.UserRepo, stockRepo repo.UserStockRepo) UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:  userRepo,
+		stockRepo: stockRepo,
 	}
 }
 
@@ -155,4 +161,21 @@ func (s *userService) DeleteUser(c context.Context, id string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *userService) GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error) {
+	if _, err := uuid.Parse(userId); err != nil {
+		return nil, respons.ErrBadRequest
+	}
+
+	stock, err := s.stockRepo.GetStockByUserId(c, userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stockDto.ErrStockNotFound
+		}
+		return nil, err
+	}
+
+	res := stockDto.ToStockResponse(stock)
+	return &res, nil
 }
