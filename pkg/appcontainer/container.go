@@ -20,7 +20,9 @@ import (
 	stockRouter "github.com/najm-x/nova/modules/stock/router"
 
 	stockService "github.com/najm-x/nova/modules/stock/service"
+	userHandler "github.com/najm-x/nova/modules/user/handler"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
+	userRouter "github.com/najm-x/nova/modules/user/router"
 	userService "github.com/najm-x/nova/modules/user/service"
 
 	"github.com/najm-x/nova/pkg/database"
@@ -47,6 +49,7 @@ type AppContainer struct {
 
 	// Repositories
 	UserRepo        userRepo.UserRepo
+	UserStockRepo   userRepo.UserStockRepo
 	RoleRepo        roleRepo.RoleRepo
 	OtpRepo         authRepo.OtpRepo
 	UnitRepo        stockRepo.UnitRepo
@@ -61,6 +64,7 @@ type AppContainer struct {
 	// Handlers
 	AuthHandler  *authHandler.AuthHandler
 	StockHandler *stockHandler.ServiceHandler
+	UserHandler  *userHandler.UserHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -107,6 +111,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 	// 7. Repositories
 	uRepo := userRepo.NewUserRepo(db)
+	uStockRepo := userRepo.NewUserStockRepo(db)
 	rRepo := roleRepo.NewRoleRepo(db)
 	oRepo := authRepo.NewOtpRepo(rdb)
 	unitRepo := stockRepo.NewUnitRepo(db)
@@ -116,12 +121,13 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	// 8. Services
 	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
-	uService := userService.NewUserService(uRepo)
+	uService := userService.NewUserService(uRepo, uStockRepo)
 	sService := stockService.NewStockService(stockRepo, unitRepo, tRepo)
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
 	stockHandler := stockHandler.NewStockHandler(sService)
+	uHandler := userHandler.NewUserHandler(uService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -133,6 +139,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		Store:       store,
 
 		UserRepo:        uRepo,
+		UserStockRepo:   uStockRepo,
 		RoleRepo:        rRepo,
 		OtpRepo:         oRepo,
 		UnitRepo:        unitRepo,
@@ -146,6 +153,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 		AuthHandler:  aHandler,
 		StockHandler: stockHandler,
+		UserHandler:  uHandler,
 	}, nil
 }
 
@@ -169,7 +177,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 	{
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
 		stockRouter.RegisterStockRoutes(v1, c.StockHandler)
-
+		userRouter.RegisterUserRoutes(v1, c.UserHandler)
 	}
 }
 
