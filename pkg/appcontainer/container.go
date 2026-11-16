@@ -15,7 +15,10 @@ import (
 	authRouter "github.com/najm-x/nova/modules/auth/router"
 	authService "github.com/najm-x/nova/modules/auth/service"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
+	stockHandler "github.com/najm-x/nova/modules/stock/handler"
 	stockRepo "github.com/najm-x/nova/modules/stock/repo"
+	stockRouter "github.com/najm-x/nova/modules/stock/router"
+
 	stockService "github.com/najm-x/nova/modules/stock/service"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
 	userService "github.com/najm-x/nova/modules/user/service"
@@ -56,7 +59,8 @@ type AppContainer struct {
 	StockService stockService.StockService
 
 	// Handlers
-	AuthHandler *authHandler.AuthHandler
+	AuthHandler  *authHandler.AuthHandler
+	StockHandler *stockHandler.ServiceHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -117,6 +121,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
+	stockHandler := stockHandler.NewStockHandler(sService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -139,7 +144,8 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		UserService:  uService,
 		StockService: sService,
 
-		AuthHandler: aHandler,
+		AuthHandler:  aHandler,
+		StockHandler: stockHandler,
 	}, nil
 }
 
@@ -162,6 +168,8 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 
 	{
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
+		stockRouter.RegisterStockRoutes(v1, c.StockHandler)
+
 	}
 }
 

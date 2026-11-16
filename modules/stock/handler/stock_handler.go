@@ -21,7 +21,7 @@ func NewStockHandler(s stockService.StockService) *ServiceHandler {
 
 // CreateStock godoc
 // @Summary      Create a new stock
-// @Description  Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1).
+// @Description  Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1). Each user can only have one stock.
 // @Tags         Stock
 // @Accept       json
 // @Produce      json
@@ -29,7 +29,7 @@ func NewStockHandler(s stockService.StockService) *ServiceHandler {
 // @Success      200      {object}  respons.Response{data=stockDto.StockResponse}  "Stock created successfully"
 // @Failure      400      {object}  respons.Response  "Invalid request or unit validation error"
 // @Failure      404      {object}  respons.Response  "Stock type not found"
-// @Failure      409      {object}  respons.Response  "Duplicate unit name"
+// @Failure      409      {object}  respons.Response  "Duplicate unit name or user already has a stock"
 // @Failure      500      {object}  respons.Response  "Internal server error"
 // @Router       /stocks [post]
 func (h *ServiceHandler) CreateStock(ctx *gin.Context) {

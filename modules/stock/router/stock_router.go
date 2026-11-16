@@ -9,6 +9,7 @@ import (
 func RegisterStockRoutes(rg *gin.RouterGroup, h *handler.ServiceHandler) {
 	stocks := rg.Group("/stocks").Use(middleware.SessionHandler())
 	{
+		stocks.GET("/types", h.GetStockTypes)
 		stocks.POST("", h.CreateStock)
 		stocks.GET("", h.GetUserStock)
 		stocks.GET("/:stock_id", h.GetStock)
