@@ -57,11 +57,19 @@ func NewStockService(
 // ==================== Stock ====================
 
 // CreateStock creates a stock for the user together with its units.
-// Exactly one unit must be the main unit (is_main = true, rate = 1).
+// A user can only have one stock. Exactly one unit must be the main unit (is_main = true, rate = 1).
 func (s *stockService) CreateStock(c context.Context, userId string, req stockDto.CreateStockRequest) (*stockDto.StockResponse, error) {
 	uid, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, respons.ErrBadRequest
+	}
+
+	hasStock, err := s.stockRepo.UserHasStock(c, userId)
+	if err != nil {
+		return nil, err
+	}
+	if hasStock {
+		return nil, stockDto.ErrStockAlreadyExists
 	}
 
 	exists, err := s.stockRepo.StockTypeExists(c, req.StockTypeID)
@@ -77,12 +85,10 @@ func (s *stockService) CreateStock(c context.Context, userId string, req stockDt
 	}
 
 	stock := &entities.Stock{
+		ID:          uuid.New(),
 		StockTypeID: req.StockTypeID,
 		UserID:      uid,
 		Units:       make([]entities.Unit, 0, len(req.Units)),
-	}
-	if req.ID != nil {
-		stock.ID = *req.ID
 	}
 	for _, u := range req.Units {
 		stock.Units = append(stock.Units, entities.Unit{
@@ -126,10 +132,10 @@ func (s *stockService) GetStockTypes(c context.Context) ([]stockDto.StockTypeRes
 	if err != nil {
 		return nil, err
 	}
-	types := make([]stockDto.StockTypeResponse, len(stockTypes))
+	types := make([]stockDto.StockTypeResponse, 0, len(stockTypes))
 
-	for _, val := range types {
-		types = append(types, val)
+	for _, val := range stockTypes {
+		types = append(types, stockDto.ToStockTypeResponse(&val))
 	}
 
 	return types, nil
@@ -222,6 +228,7 @@ func (s *stockService) CreateTransaction(c context.Context, userId string, stock
 	qty := float64(req.Amount) * float64(unit.Rate)
 
 	t := &entities.Transaction{
+		ID:          uuid.New(),
 		Amount:      req.Amount,
 		UnitID:      unit.ID,
 		StockID:     stock.ID,
@@ -344,6 +351,8 @@ func mapRepoErr(err error) error {
 		return respons.ErrBadRequest
 	case errors.Is(err, stockRepo.ErrUnitHasTransactions):
 		return stockDto.ErrUnitHasTransactions
+	case errors.Is(err, stockRepo.ErrStockAlreadyExists):
+		return stockDto.ErrStockAlreadyExists
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return stockDto.ErrStockNotFound
 	}
