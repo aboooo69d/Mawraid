@@ -496,20 +496,6 @@ const docTemplate = `{
                     "Stock"
                 ],
                 "summary": "List user stocks",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number (default 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page size (default 20, max 100)",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Stocks retrieved successfully",
@@ -547,7 +533,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1).",
+                "description": "Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1). Each user can only have one stock.",
                 "consumes": [
                     "application/json"
                 ],
@@ -601,7 +587,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Duplicate unit name",
+                        "description": "Duplicate unit name or user already has a stock",
                         "schema": {
                             "$ref": "#/definitions/respons.Response"
                         }
@@ -1090,9 +1076,6 @@ const docTemplate = `{
                 "units"
             ],
             "properties": {
-                "id": {
-                    "type": "string"
-                },
                 "stock_type_id": {
                     "type": "integer"
                 },

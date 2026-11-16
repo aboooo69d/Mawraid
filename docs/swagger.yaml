@@ -69,8 +69,6 @@ definitions:
     type: object
   dto.CreateStockRequest:
     properties:
-      id:
-        type: string
       stock_type_id:
         type: integer
       units:
@@ -624,15 +622,6 @@ paths:
   /stocks:
     get:
       description: Returns a paginated list of stocks owned by the authenticated user.
-      parameters:
-      - description: Page number (default 1)
-        in: query
-        name: page
-        type: integer
-      - description: Page size (default 20, max 100)
-        in: query
-        name: page_size
-        type: integer
       produces:
       - application/json
       responses:
@@ -662,7 +651,7 @@ paths:
       consumes:
       - application/json
       description: Create a stock for the authenticated user together with its units
-        (exactly one main unit with rate = 1).
+        (exactly one main unit with rate = 1). Each user can only have one stock.
       parameters:
       - description: Stock creation payload
         in: body
@@ -691,7 +680,7 @@ paths:
           schema:
             $ref: '#/definitions/respons.Response'
         "409":
-          description: Duplicate unit name
+          description: Duplicate unit name or user already has a stock
           schema:
             $ref: '#/definitions/respons.Response'
         "500":
