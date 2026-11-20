@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Mawraid Backend - Fast GitHub Sync & Quality Gate
 #>
