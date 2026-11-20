@@ -11,6 +11,7 @@ import (
 const (
 	RoleConsumer = "consumer"
 	RoleProvider = "provider"
+	RoleAdmin    = "admin"
 )
 
 type RoleRepo interface {

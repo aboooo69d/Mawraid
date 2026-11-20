@@ -23,3 +23,34 @@ func SessionHandler() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+// RequireRole verifies that the logged-in user possesses one of the allowed roles.
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		roleVal, exists := ctx.Get("role")
+		if !exists || roleVal == nil {
+			respons.Abort(ctx, authDto.ErrUnauthorized)
+			return
+		}
+
+		userRole, ok := roleVal.(string)
+		if !ok {
+			respons.Abort(ctx, authDto.ErrUnauthorized)
+			return
+		}
+
+		for _, r := range allowedRoles {
+			if r == userRole {
+				ctx.Next()
+				return
+			}
+		}
+
+		respons.Abort(ctx, authDto.ErrAdminAccessRequired)
+	}
+}
+
+// RequireAdmin is a convenience helper requiring the "admin" role.
+func RequireAdmin() gin.HandlerFunc {
+	return RequireRole("admin")
+}

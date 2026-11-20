@@ -23,6 +23,8 @@ type (
 		RegisterConsumer(c context.Context, req userDto.CreateConsumerRequest) (*userDto.ConsumerResponse, error)
 		RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error)
 		Login(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error)
+		AdminLogin(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error)
+		GetMe(c context.Context, userID string) (*userDto.UserResponseBase, error)
 		VerifyPhone(c context.Context, phone string, code string) error
 		ForgetPassword(c context.Context, phone string) error
 		ResetPassword(c context.Context, req dto.RestPasswordRequest) error
@@ -160,6 +162,28 @@ func (s *authService) Login(c context.Context, req dto.UserLoginRequest) (*userD
 	}
 
 	return userDto.ToUserResponse(existingUser), nil
+}
+
+func (s *authService) AdminLogin(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error) {
+	user, err := s.Login(c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.RoleName != roleRepo.RoleAdmin {
+		return nil, dto.ErrAdminAccessRequired
+	}
+
+	return user, nil
+}
+
+func (s *authService) GetMe(c context.Context, userID string) (*userDto.UserResponseBase, error) {
+	user, err := s.userRepo.GetUserById(c, userID)
+	if err != nil {
+		return nil, dto.ErrUserNotFound
+	}
+
+	return userDto.ToUserResponse(user), nil
 }
 
 func (s *authService) VerifyPhone(c context.Context, phone string, code string) error {

@@ -8,6 +8,7 @@ import (
 	"github.com/najm-x/nova/config"
 	"github.com/najm-x/nova/database/entities"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
+	valueHashing "github.com/najm-x/nova/pkg/value_hashing"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -65,6 +66,7 @@ func seedRoles(db *gorm.DB) error {
 	defaultRoles := []entities.Role{
 		{Name: roleRepo.RoleConsumer, DisplayName: "مستهلك"},
 		{Name: roleRepo.RoleProvider, DisplayName: "مزود خدمة"},
+		{Name: roleRepo.RoleAdmin, DisplayName: "مدير النظام"},
 	}
 
 	for _, role := range defaultRoles {
@@ -76,6 +78,39 @@ func seedRoles(db *gorm.DB) error {
 			if err := db.Create(&role).Error; err != nil {
 				return fmt.Errorf("failed to seed role %s: %w", role.Name, err)
 			}
+		}
+	}
+
+	return seedAdmin(db)
+}
+
+func seedAdmin(db *gorm.DB) error {
+	var adminRole entities.Role
+	if err := db.Where("name = ?", roleRepo.RoleAdmin).First(&adminRole).Error; err != nil {
+		return fmt.Errorf("failed to find admin role: %w", err)
+	}
+
+	var count int64
+	if err := db.Model(&entities.User{}).Where("role_id = ?", adminRole.ID).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to check existing admin users: %w", err)
+	}
+
+	if count == 0 {
+		hashedPassword, err := valueHashing.HashValue("Admin@123456")
+		if err != nil {
+			return fmt.Errorf("failed to hash default admin password: %w", err)
+		}
+
+		adminUser := entities.User{
+			Phone:      "777777777",
+			Password:   hashedPassword,
+			RoleID:     adminRole.ID,
+			IsVerified: true,
+			Status:     entities.StatusActive,
+		}
+
+		if err := db.Create(&adminUser).Error; err != nil {
+			return fmt.Errorf("failed to seed default admin user: %w", err)
 		}
 	}
 

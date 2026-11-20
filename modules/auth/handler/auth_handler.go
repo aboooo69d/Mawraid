@@ -221,6 +221,71 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	respons.OK(c, user)
 }
 
+// AdminLogin godoc
+// @Summary      Admin Login
+// @Description  Authenticate admin user with phone and password.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body      authDto.UserLoginRequest  true  "Admin Login credentials"
+// @Success      200     {object}  respons.Response{data=userDto.UserResponseBase}  "Logged in successfully"
+// @Failure      400     {object}  respons.Response  "Invalid request body"
+// @Failure      401     {object}  respons.Response  "Invalid credentials"
+// @Failure      403     {object}  respons.Response  "Admin access required"
+// @Router       /auth/admin/login [post]
+func (h *AuthHandler) AdminLogin(c *gin.Context) {
+	var req authDto.UserLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		_ = c.Error(respons.ErrBadRequest)
+		return
+	}
+
+	user, err := h.authService.AdminLogin(c.Request.Context(), req)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	session := sessions.Default(c)
+	session.Set("user_id", user.ID)
+	session.Set("role", user.RoleName)
+	if err := session.Save(); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	respons.OK(c, user)
+}
+
+// GetMe godoc
+// @Summary      Get current authenticated user profile
+// @Description  Returns user profile for the active session
+// @Tags         Auth
+// @Produce      json
+// @Success      200     {object}  respons.Response{data=userDto.UserResponseBase}  "Current user details"
+// @Failure      401     {object}  respons.Response  "Unauthorized"
+// @Router       /auth/me [get]
+func (h *AuthHandler) GetMe(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+	if !exists || userId == nil {
+		respons.Abort(c, authDto.ErrUnauthorized)
+		return
+	}
+
+	userIdStr, ok := userId.(string)
+	if !ok {
+		respons.Abort(c, authDto.ErrUnauthorized)
+		return
+	}
+
+	user, err := h.authService.GetMe(c.Request.Context(), userIdStr)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	respons.OK(c, user)
+}
+
 // Logout godoc
 // @Summary      Logout user
 // @Description  logout and and delete cookies.

@@ -16,6 +16,7 @@ const (
 	ErrInvalidResetKey        = 1104
 	ErrTurnstileToken         = 1105
 	ErrUnauthorized           = 1106
+	ErrForbidden              = 1107
 )
 
 const (

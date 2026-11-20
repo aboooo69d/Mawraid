@@ -84,6 +84,11 @@ var (
 		Code:    errsCode.ErrAcountNotVerify,
 		Message: "account is not verified",
 	}
+	ErrAdminAccessRequired = &respons.AppError{
+		Status:  403,
+		Code:    errsCode.ErrForbidden,
+		Message: "admin access required",
+	}
 
 	// 409 Conflict - الحساب موثق بالفعل
 	ErrAccountAlreadyVerified = &respons.AppError{

@@ -16,11 +16,13 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler, cfg *config
 		auth.POST("/register/consumer", h.RegisterConsumer)
 		auth.POST("/register/provider", h.RegisterProvider)
 		auth.POST("/login", h.Login)
+		auth.POST("/admin/login", h.AdminLogin)
 		auth.POST("/verify-phone", h.VerifyPhone)
 		auth.POST("/resend-otp", h.ResendOtp)
 		auth.POST("/forget-password", h.ForgetPassword)
 		auth.POST("/reset-password", h.ResetPassword)
 		authWithOutTurnstile.POST("/logout", h.LogOut)
+		authWithOutTurnstile.GET("/me", middleware.SessionHandler(), h.GetMe)
 
 	}
 }
