@@ -14,6 +14,10 @@ import (
 	authRepo "github.com/najm-x/nova/modules/auth/repo"
 	authRouter "github.com/najm-x/nova/modules/auth/router"
 	authService "github.com/najm-x/nova/modules/auth/service"
+	auditHandler "github.com/najm-x/nova/modules/audit/handler"
+	auditRepo "github.com/najm-x/nova/modules/audit/repo"
+	auditRouter "github.com/najm-x/nova/modules/audit/router"
+	auditService "github.com/najm-x/nova/modules/audit/service"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
 	userService "github.com/najm-x/nova/modules/user/service"
@@ -40,17 +44,20 @@ type AppContainer struct {
 	SmsProvider smsSender.Provider
 
 	// Repositories
-	UserRepo userRepo.UserRepo
-	RoleRepo roleRepo.RoleRepo
-	OtpRepo  authRepo.OtpRepo
+	UserRepo  userRepo.UserRepo
+	RoleRepo  roleRepo.RoleRepo
+	OtpRepo   authRepo.OtpRepo
+	AuditRepo auditRepo.AuditRepo
 
 	// Services
-	OtpService  authService.OtpService
-	AuthService authService.AuthService
-	UserService userService.UserService
+	OtpService   authService.OtpService
+	AuthService  authService.AuthService
+	UserService  userService.UserService
+	AuditService auditService.AuditService
 
 	// Handlers
-	AuthHandler *authHandler.AuthHandler
+	AuthHandler  *authHandler.AuthHandler
+	AuditHandler *auditHandler.AuditHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -99,14 +106,17 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	uRepo := userRepo.NewUserRepo(db)
 	rRepo := roleRepo.NewRoleRepo(db)
 	oRepo := authRepo.NewOtpRepo(rdb)
+	audRepo := auditRepo.NewAuditRepo(db)
 
 	// 8. Services
 	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
+	audService := auditService.NewAuditService(audRepo)
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
+	audHandler := auditHandler.NewAuditHandler(audService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -117,15 +127,18 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		SmsProvider: smsClient,
 		Store:       store,
 
-		UserRepo: uRepo,
-		RoleRepo: rRepo,
-		OtpRepo:  oRepo,
+		UserRepo:  uRepo,
+		RoleRepo:  rRepo,
+		OtpRepo:   oRepo,
+		AuditRepo: audRepo,
 
-		OtpService:  oService,
-		AuthService: aService,
-		UserService: uService,
+		OtpService:   oService,
+		AuthService:  aService,
+		UserService:  uService,
+		AuditService: audService,
 
-		AuthHandler: aHandler,
+		AuthHandler:  aHandler,
+		AuditHandler: audHandler,
 	}, nil
 }
 
@@ -148,6 +161,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 
 	{
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
+		auditRouter.RegisterAuditRoutes(v1, c.AuditHandler)
 	}
 }
 

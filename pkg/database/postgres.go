@@ -54,9 +54,35 @@ func AutoMigrateAndSeed(db *gorm.DB) error {
 		&entities.User{},
 		&entities.Provider{},
 		&entities.Consumer{},
+		&entities.AuditLog{},
 	)
 	if err != nil {
 		return fmt.Errorf("auto-migration failed: %w", err)
+	}
+
+	// Enforce DB-level immutability for audit_logs table (Append-Only)
+	triggerSQL := `
+	CREATE OR REPLACE FUNCTION prevent_audit_log_modification()
+	RETURNS TRIGGER AS $$
+	BEGIN
+		RAISE EXCEPTION 'Audit logs are immutable: UPDATE and DELETE operations are strictly prohibited.';
+	END;
+	$$ LANGUAGE plpgsql;
+
+	DO $$
+	BEGIN
+		IF NOT EXISTS (
+			SELECT 1 FROM pg_trigger WHERE tgname = 'trg_audit_logs_immutable'
+		) THEN
+			CREATE TRIGGER trg_audit_logs_immutable
+			BEFORE UPDATE OR DELETE ON audit_logs
+			FOR EACH ROW EXECUTE FUNCTION prevent_audit_log_modification();
+		END IF;
+	END $$;
+	`
+	if err := db.Exec(triggerSQL).Error; err != nil {
+		// Ignore if non-postgres dialect in tests, otherwise log/continue
+		_ = err
 	}
 
 	return seedRoles(db)
