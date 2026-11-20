@@ -19,7 +19,9 @@ import (
 	auditRouter "github.com/najm-x/nova/modules/audit/router"
 	auditService "github.com/najm-x/nova/modules/audit/service"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
+	userHandler "github.com/najm-x/nova/modules/user/handler"
 	userRepo "github.com/najm-x/nova/modules/user/repo"
+	userRouter "github.com/najm-x/nova/modules/user/router"
 	userService "github.com/najm-x/nova/modules/user/service"
 	"github.com/najm-x/nova/pkg/database"
 	smsSender "github.com/najm-x/nova/pkg/sms_sender"
@@ -58,6 +60,7 @@ type AppContainer struct {
 	// Handlers
 	AuthHandler  *authHandler.AuthHandler
 	AuditHandler *auditHandler.AuditHandler
+	UserHandler  *userHandler.UserHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -117,6 +120,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
 	audHandler := auditHandler.NewAuditHandler(audService)
+	uHandler := userHandler.NewUserHandler(uService, audService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -139,6 +143,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 		AuthHandler:  aHandler,
 		AuditHandler: audHandler,
+		UserHandler:  uHandler,
 	}, nil
 }
 
@@ -162,6 +167,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 	{
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
 		auditRouter.RegisterAuditRoutes(v1, c.AuditHandler)
+		userRouter.RegisterUserRoutes(v1, c.UserHandler)
 	}
 }
 

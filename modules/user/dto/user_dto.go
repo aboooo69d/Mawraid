@@ -53,10 +53,12 @@ type CreateConsumerRequest struct {
 }
 
 type UpdateUserRequest struct {
-	UserBase
+	Phone      *string                `json:"phone,omitempty" binding:"omitempty,yemen_phone"`
+	Password   *string                `json:"password,omitempty" binding:"omitempty,min=8,max=255"`
 	IsVerified *bool                  `json:"is_verified,omitempty"`
-	IsActive   *bool                  `json:"is_active,omitempty"`
+	Status     *entities.UserStatus   `json:"status,omitempty"`
 	RoleID     *uint                  `json:"role_id,omitempty"`
+	Reason     string                 `json:"reason,omitempty"`
 	Provider   *UpdateProviderRequest `json:"provider,omitempty"`
 	Consumer   *UpdateConsumerRequest `json:"consumer,omitempty"`
 }

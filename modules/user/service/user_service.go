@@ -6,6 +6,7 @@ import (
 
 	"github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/modules/user/repo"
+	valueHashing "github.com/najm-x/nova/pkg/value_hashing"
 	"gorm.io/gorm"
 )
 
@@ -38,12 +39,22 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		return nil, err
 	}
 
-	if req.Phone != "" && req.Phone != existingUser.Phone {
-
-		if _, err := s.userRepo.GetUserByPhone(c, req.Phone); err == nil {
+	if req.Phone != nil && *req.Phone != "" && *req.Phone != existingUser.Phone {
+		if _, err := s.userRepo.GetUserByPhone(c, *req.Phone); err == nil {
 			return nil, dto.ErrPhoneAlreadyExists
 		}
-		existingUser.Phone = req.Phone
+		existingUser.Phone = *req.Phone
+	}
+
+	if req.Password != nil && *req.Password != "" {
+		hashed, err := valueHashing.HashValue(*req.Password)
+		if err == nil {
+			existingUser.Password = hashed
+		}
+	}
+
+	if req.Status != nil {
+		existingUser.Status = *req.Status
 	}
 
 	if req.IsVerified != nil {
