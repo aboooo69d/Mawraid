@@ -154,3 +154,68 @@ func ToConsumerResponse(user *entities.User) *ConsumerResponse {
 		BusinessFile:     user.Consumer.BusinessFile,
 	}
 }
+
+// ---- Admin: manage registrations ----
+
+const (
+	ActionAccept = "accept"
+	ActionBlock  = "block"
+)
+
+var (
+	ErrForbidden           = &respons.AppError{Status: 403, Code: errsCode.ErrForbidden, Message: "admin access required"}
+	ErrInvalidStatusChange = &respons.AppError{Status: 409, Code: errsCode.ErrInvalidProfileField, Message: "user status is already set to this value"}
+)
+
+type ListUsersQuery struct {
+	Page    int    `form:"page" binding:"omitempty,min=1"`
+	PerPage int    `form:"per_page" binding:"omitempty,min=1,max=100"`
+	Status  string `form:"status" binding:"omitempty,oneof=pending docs active rejected suspended"`
+}
+
+type ChangeUserStatusRequest struct {
+	Action string `json:"action" binding:"required,oneof=accept block"`
+}
+
+type UserDetailResponse struct {
+	UserResponseBase
+	Provider *ProviderInfo `json:"provider,omitempty"`
+	Consumer *ConsumerInfo `json:"consumer,omitempty"`
+}
+
+type ProviderInfo struct {
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	StartAt     time.Time `json:"start_at"`
+	EndAt       time.Time `json:"end_at"`
+}
+
+type ConsumerInfo struct {
+	Name          string  `json:"name"`
+	IdNumber      string  `json:"id_number"`
+	IdImage       string  `json:"id_image,omitempty"`
+	IsDriver      bool    `json:"is_driver"`
+	VehicleNumber *string `json:"vehicle_number,omitempty"`
+	VehicleType   *string `json:"vehicle_type,omitempty"`
+	IsHome        bool    `json:"is_home"`
+	FamilyCount   *int    `json:"family_count,omitempty"`
+	IsBusiness    bool    `json:"is_business"`
+	BusinessName  *string `json:"business_name,omitempty"`
+	BusinessFile  *string `json:"business_file,omitempty"`
+}
+
+func ToUserDetailResponse(user *entities.User) *UserDetailResponse {
+	res := &UserDetailResponse{UserResponseBase: *ToUserResponse(user)}
+	if p := user.Provider; p != nil {
+		res.Provider = &ProviderInfo{Name: p.Name, Description: p.Description, StartAt: p.StartAt, EndAt: p.EndAt}
+	}
+	if c := user.Consumer; c != nil {
+		res.Consumer = &ConsumerInfo{
+			Name: c.Name, IdNumber: c.IdNumber, IdImage: c.IdImage,
+			IsDriver: c.IsDriver, VehicleNumber: c.VehicleNumber, VehicleType: c.VehicleType,
+			IsHome: c.IsHome, FamilyCount: c.FamilyCount,
+			IsBusiness: c.IsBusiness, BusinessName: c.BusinessName, BusinessFile: c.BusinessFile,
+		}
+	}
+	return res
+}

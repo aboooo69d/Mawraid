@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/najm-x/nova/database/entities"
 	stockDto "github.com/najm-x/nova/modules/stock/dto"
 	"github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/modules/user/repo"
@@ -18,6 +19,9 @@ type (
 		GetUserById(c context.Context, id string) (*dto.UserResponseBase, error)
 		GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponseBase, error)
 		DeleteUser(c context.Context, id string) error
+		ListUsersByStatus(c context.Context, q dto.ListUsersQuery) ([]dto.UserResponseBase, *respons.Meta, error)
+		GetUserDetail(c context.Context, id string) (*dto.UserDetailResponse, error)
+		ChangeUserStatus(c context.Context, id string, action string) (*dto.UserResponseBase, error)
 		GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error)
 	}
 
@@ -178,4 +182,86 @@ func (s *userService) GetUserStock(c context.Context, userId string) (*stockDto.
 
 	res := stockDto.ToStockResponse(stock)
 	return &res, nil
+}
+
+// ListUsersByStatus returns a page of users filtered by status (default: pending = new registrations).
+func (s *userService) ListUsersByStatus(c context.Context, q dto.ListUsersQuery) ([]dto.UserResponseBase, *respons.Meta, error) {
+	if q.Page < 1 {
+		q.Page = 1
+	}
+	if q.PerPage < 1 || q.PerPage > 100 {
+		q.PerPage = 10
+	}
+	status := entities.UserStatus(q.Status)
+	if status == "" {
+		status = entities.StatusPending
+	}
+
+	users, total, err := s.userRepo.ListUsersByStatus(c, status, q.PerPage, (q.Page-1)*q.PerPage)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	items := make([]dto.UserResponseBase, len(users))
+	for i := range users {
+		items[i] = *dto.ToUserResponse(&users[i])
+	}
+	meta := &respons.Meta{
+		Page:       q.Page,
+		PerPage:    q.PerPage,
+		Total:      int(total),
+		TotalPages: int((total + int64(q.PerPage) - 1) / int64(q.PerPage)),
+	}
+	return items, meta, nil
+}
+
+func (s *userService) GetUserDetail(c context.Context, id string) (*dto.UserDetailResponse, error) {
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, respons.ErrBadRequest
+	}
+	user, err := s.userRepo.GetUserById(c, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, dto.ErrUserNotFound
+		}
+		return nil, err
+	}
+	return dto.ToUserDetailResponse(user), nil
+}
+
+// ChangeUserStatus applies an admin action: accept -> active, block -> rejected.
+func (s *userService) ChangeUserStatus(c context.Context, id string, action string) (*dto.UserResponseBase, error) {
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, respons.ErrBadRequest
+	}
+
+	var newStatus entities.UserStatus
+	switch action {
+	case dto.ActionAccept:
+		newStatus = entities.StatusActive
+	case dto.ActionBlock:
+		newStatus = entities.StatusRejected
+	default:
+		return nil, respons.ErrBadRequest
+	}
+
+	user, err := s.userRepo.GetUserById(c, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, dto.ErrUserNotFound
+		}
+		return nil, err
+	}
+	if user.Status == newStatus {
+		return nil, dto.ErrInvalidStatusChange
+	}
+
+	if err := s.userRepo.UpdateUserStatus(c, id, newStatus); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, dto.ErrUserNotFound
+		}
+		return nil, err
+	}
+	user.Status = newStatus
+	return dto.ToUserResponse(user), nil
 }

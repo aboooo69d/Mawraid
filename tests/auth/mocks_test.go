@@ -121,3 +121,22 @@ func (m *mockSmsProvider) SendSMS(phone string, message string) error {
 	return nil
 }
 
+
+func (m *mockUserRepo) ListUsersByStatus(c context.Context, status entities.UserStatus, limit int, offset int) ([]entities.User, int64, error) {
+	var list []entities.User
+	for _, u := range m.usersByID {
+		if u.Status == status {
+			list = append(list, *u)
+		}
+	}
+	return list, int64(len(list)), nil
+}
+
+func (m *mockUserRepo) UpdateUserStatus(c context.Context, id string, status entities.UserStatus) error {
+	u, ok := m.usersByID[id]
+	if !ok {
+		return gorm.ErrRecordNotFound
+	}
+	u.Status = status
+	return nil
+}

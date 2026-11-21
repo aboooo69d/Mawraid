@@ -15,6 +15,8 @@ type (
 		GetUserByPhone(c context.Context, phone string) (*entities.User, error)
 		GetAllUsers(c context.Context, limit int, offset int) ([]entities.User, error)
 		DeleteUser(c context.Context, id string) error
+		ListUsersByStatus(c context.Context, status entities.UserStatus, limit int, offset int) ([]entities.User, int64, error)
+		UpdateUserStatus(c context.Context, id string, status entities.UserStatus) error
 	}
 
 	userRepo struct {
@@ -112,6 +114,38 @@ func (u *userRepo) DeleteUser(c context.Context, id string) error {
 		return err
 	}
 	if rowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// ListUsersByStatus returns one page of users with the given status (newest first) and the total count.
+func (u *userRepo) ListUsersByStatus(c context.Context, status entities.UserStatus, limit int, offset int) ([]entities.User, int64, error) {
+	var total int64
+	if err := u.db.WithContext(c).Model(&entities.User{}).Where("status = ?", status).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var users []entities.User
+	err := u.db.WithContext(c).
+		Preload("Role").
+		Preload("Provider").
+		Preload("Consumer").
+		Where("status = ?", status).
+		Order("created_at DESC, id").
+		Limit(limit).
+		Offset(offset).
+		Find(&users).Error
+	return users, total, err
+}
+
+// UpdateUserStatus changes only the status column of a user.
+func (u *userRepo) UpdateUserStatus(c context.Context, id string, status entities.UserStatus) error {
+	res := u.db.WithContext(c).Model(&entities.User{}).Where("id = ?", id).Update("status", status)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
