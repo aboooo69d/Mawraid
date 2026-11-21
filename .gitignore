@@ -1,5 +1,3 @@
 .env
 *.md
-!README.md
-!CODE_REVIEW.md
-!tests/README.md
+admin_users_frontend_ar.md
