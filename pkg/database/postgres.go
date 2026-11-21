@@ -54,10 +54,10 @@ func AutoMigrateAndSeed(db *gorm.DB) error {
 		&entities.ProviderType{},
 		&entities.Provider{},
 		&entities.Consumer{},
+		&entities.StockType{},
 		&entities.Stock{},
 		&entities.Unit{},
 		&entities.Transaction{},
-		&entities.StockType{},
 	)
 	if err != nil {
 		return fmt.Errorf("auto-migration failed: %w", err)

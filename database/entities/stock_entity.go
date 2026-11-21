@@ -2,23 +2,31 @@ package entities
 
 import (
 	"github.com/google/uuid"
+	"github.com/najm-x/nova/pkg/geo"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type Stock struct {
 	TimeStamp
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	Available   float64   `gorm:"type:numeric(10,2);not null;default:0"`
-	StockTypeID uint      `gorm:"not null;index"`
-	StockType   StockType `gorm:"foreignKey:StockTypeID"`
-	Units       []Unit    `gorm:"foreignKey:StockID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	UserID      uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
-	User        User      `gorm:"foreignKey:UserID"`
+	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Available    float64        `gorm:"type:numeric(10,2);not null;default:0"`
+	Address      string         `gorm:"type:varchar(250);not null"`
+	Location     geo.Point      `gorm:"type:geography(POINT,4326);not null"`
+	StockTypeID  uint           `gorm:"not null;index"`
+	StockType    StockType      `gorm:"foreignKey:StockTypeID"`
+	Units        []Unit         `gorm:"foreignKey:StockID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	UserID       uuid.UUID      `gorm:"type:uuid;not null;index"`
+	User         User           `gorm:"foreignKey:UserID"`
+	StockDetails datatypes.JSON `gorm:"type:jsonb"`
 }
 
 type StockType struct {
 	gorm.Model
-	Name string `gorm:"type:varchar(50);not null"`
+	Name           string       `gorm:"type:varchar(50);not null"`
+	Slug           string       `gorm:"type:varchar(50);unique;not null"`
+	ProviderTypeID uint         `gorm:"index"`
+	ProviderType   ProviderType `gorm:"foreignKey:ProviderTypeID"`
 }
 
 type Unit struct {
