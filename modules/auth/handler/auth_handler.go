@@ -167,6 +167,7 @@ func handleUploadError(c *gin.Context, err error) {
 // @Param        request body      userDto.CreateProviderRequest  true  "Provider registration request payload"
 // @Success      201     {object}  respons.Response{data=userDto.ProviderResponse}  "Registered successfully"
 // @Failure      400     {object}  respons.Response  "Invalid request or missing profile data"
+// @Failure      404     {object}  respons.Response  "Provider type not found"
 // @Failure      409     {object}  respons.Response  "Phone number already registered"
 // @Failure      500     {object}  respons.Response  "Internal server error"
 // @Router       /auth/register/provider [post]

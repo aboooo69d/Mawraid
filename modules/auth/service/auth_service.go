@@ -16,6 +16,7 @@ import (
 	valueHashing "github.com/najm-x/nova/pkg/value_hashing"
 	"github.com/najm-x/nova/utils"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 type (
@@ -90,6 +91,14 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateProv
 		return nil, dto.ErrPhoneAlreadyExists
 	}
 
+	providerType, err := s.userRepo.GetProviderTypeById(c, req.ProviderTypeID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, userDto.ErrProviderTypeNotFound
+		}
+		return nil, dto.ErrInternalServer
+	}
+
 	hashedPassword, err := valueHashing.HashValue(req.Password)
 	if err != nil {
 		return nil, dto.ErrInternalServer
@@ -110,15 +119,17 @@ func (s *authService) RegisterProvider(c context.Context, req userDto.CreateProv
 	}
 
 	newUser.Provider = &entities.Provider{
-		Name:        req.Name,
-		Description: req.Description,
-		StartAt:     req.StartAt,
-		EndAt:       req.EndAt,
+		Name:           req.Name,
+		Description:    req.Description,
+		StartAt:        req.StartAt,
+		EndAt:          req.EndAt,
+		ProviderTypeID: providerType.ID,
 	}
 
 	if err := s.userRepo.CreateUser(c, &newUser); err != nil {
 		return nil, dto.ErrInternalServer
 	}
+	newUser.Provider.ProviderType = *providerType
 
 	go s.otpService.SendOtp(context.Background(), newUser.Phone)
 
