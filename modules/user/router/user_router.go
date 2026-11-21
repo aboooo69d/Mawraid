@@ -8,15 +8,25 @@ import (
 )
 
 func RegisterUserRoutes(rg *gin.RouterGroup, h *handler.UserHandler) {
+	rg.GET("/provider-types", h.ListProviderTypes)
+
 	users := rg.Group("/user").Use(middleware.SessionHandler())
 	{
 		users.GET("/me/stock", h.GetUserStock)
 	}
 
-	admin := rg.Group("/admin/users", middleware.SessionHandler(), middleware.RequireRole(roleRepo.RoleAdmin))
+	admin := rg.Group("/admin", middleware.SessionHandler(), middleware.RequireRole(roleRepo.RoleAdmin))
 	{
-		admin.GET("", h.ListUsers)
-		admin.GET("/:id", h.GetUser)
-		admin.PATCH("/:id/status", h.ChangeUserStatus)
+		adminUsers := admin.Group("/users")
+		{
+			adminUsers.GET("", h.ListUsers)
+			adminUsers.GET("/:id", h.GetUser)
+			adminUsers.PATCH("/:id/status", h.ChangeUserStatus)
+		}
+
+		adminProviderTypes := admin.Group("/provider-types")
+		{
+			adminProviderTypes.POST("", h.CreateProviderType)
+		}
 	}
 }

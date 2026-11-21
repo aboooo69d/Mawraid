@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
@@ -23,6 +24,8 @@ type (
 		GetUserDetail(c context.Context, id string) (*dto.UserDetailResponse, error)
 		ChangeUserStatus(c context.Context, id string, action string) (*dto.UserResponseBase, error)
 		GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error)
+		CreateProviderType(c context.Context, req dto.CreateProviderTypeRequest) (*dto.ProviderTypeResponse, error)
+		GetProviderTypes(c context.Context) ([]dto.ProviderTypeResponse, error)
 	}
 
 	userService struct {
@@ -76,6 +79,17 @@ func (s *userService) UpdateUser(c context.Context, id string, req dto.UpdateUse
 		}
 		if req.Provider.EndAt != nil {
 			existingUser.Provider.EndAt = *req.Provider.EndAt
+		}
+		if req.Provider.ProviderTypeID != nil {
+			pt, err := s.userRepo.GetProviderTypeById(c, *req.Provider.ProviderTypeID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, dto.ErrProviderTypeNotFound
+				}
+				return nil, err
+			}
+			existingUser.Provider.ProviderTypeID = pt.ID
+			existingUser.Provider.ProviderType = *pt
 		}
 	}
 
@@ -264,4 +278,47 @@ func (s *userService) ChangeUserStatus(c context.Context, id string, action stri
 	}
 	user.Status = newStatus
 	return dto.ToUserResponse(user), nil
+}
+
+func (s *userService) CreateProviderType(c context.Context, req dto.CreateProviderTypeRequest) (*dto.ProviderTypeResponse, error) {
+	name := strings.TrimSpace(req.Name)
+	slug := strings.ToLower(strings.TrimSpace(req.Slug))
+	if name == "" || slug == "" {
+		return nil, respons.ErrBadRequest
+	}
+
+	exists, err := s.userRepo.ProviderTypeExistsByNameOrSlug(c, name, slug)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, dto.ErrProviderTypeAlreadyExists
+	}
+
+	pt := &entities.ProviderType{
+		Name: name,
+		Slug: slug,
+	}
+	if err := s.userRepo.CreateProviderType(c, pt); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, dto.ErrProviderTypeAlreadyExists
+		}
+		return nil, err
+	}
+
+	res := dto.ToProviderTypeResponse(pt)
+	return &res, nil
+}
+
+func (s *userService) GetProviderTypes(c context.Context) ([]dto.ProviderTypeResponse, error) {
+	providerTypes, err := s.userRepo.GetProviderTypes(c)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.ProviderTypeResponse, 0, len(providerTypes))
+	for i := range providerTypes {
+		res = append(res, dto.ToProviderTypeResponse(&providerTypes[i]))
+	}
+	return res, nil
 }

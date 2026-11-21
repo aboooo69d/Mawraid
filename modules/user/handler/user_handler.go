@@ -127,3 +127,49 @@ func (h *UserHandler) ChangeUserStatus(ctx *gin.Context) {
 	}
 	respons.OK(ctx, user)
 }
+
+// CreateProviderType godoc
+// @Summary      Create a provider type (admin)
+// @Description  Creates a new provider category/type with a unique name and slug.
+// @Tags         Admin Provider Types
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.CreateProviderTypeRequest  true  "Provider type payload"
+// @Success      200      {object}  respons.Response{data=dto.ProviderTypeResponse}
+// @Failure      400      {object}  respons.Response  "Invalid request body"
+// @Failure      409      {object}  respons.Response  "Provider type already exists"
+// @Failure      500      {object}  respons.Response  "Internal server error"
+// @Router       /admin/provider-types [post]
+func (h *UserHandler) CreateProviderType(ctx *gin.Context) {
+	var req dto.CreateProviderTypeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(respons.ErrBadRequest)
+		return
+	}
+
+	pt, err := h.userService.CreateProviderType(ctx.Request.Context(), req)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	respons.OK(ctx, pt)
+}
+
+// ListProviderTypes godoc
+// @Summary      List provider types
+// @Description  Returns all available provider types.
+// @Tags         Provider Types
+// @Produce      json
+// @Success      200  {object}  respons.Response{data=[]dto.ProviderTypeResponse}
+// @Failure      500  {object}  respons.Response  "Internal server error"
+// @Router       /provider-types [get]
+func (h *UserHandler) ListProviderTypes(ctx *gin.Context) {
+	types, err := h.userService.GetProviderTypes(ctx.Request.Context())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	respons.OK(ctx, types)
+}
