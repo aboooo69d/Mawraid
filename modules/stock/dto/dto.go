@@ -1,12 +1,14 @@
 package dto
 
 import (
+	"encoding/json"
 	"math"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
 	errsCode "github.com/najm-x/nova/pkg/constants/errs_code"
+	"github.com/najm-x/nova/pkg/geo"
 	"github.com/najm-x/nova/pkg/respons"
 )
 
@@ -23,21 +25,38 @@ var (
 	ErrDuplicateUnitName   = &respons.AppError{Status: 409, Code: errsCode.ErrDuplicateUnitName, Message: "a unit with this name already exists in the stock"}
 	ErrUnitHasTransactions = &respons.AppError{Status: 409, Code: errsCode.ErrUnitHasTransactions, Message: "cannot change rate of a unit that has transactions"}
 	ErrStockAlreadyExists  = &respons.AppError{Status: 409, Code: errsCode.ErrStockAlreadyExists, Message: "user already has a stock"}
+	ErrStockTypeMismatch   = &respons.AppError{Status: 400, Code: errsCode.ErrStockTypeMismatch, Message: "stock type does not match the selected stock type"}
+	ErrInvalidStockDetails = &respons.AppError{Status: 400, Code: errsCode.ErrInvalidStockDetails, Message: "invalid stock details"}
+	ErrStockTypeNotAllowed = &respons.AppError{Status: 403, Code: errsCode.ErrStockTypeNotAllowed, Message: "stock type is not allowed for your provider type"}
+	ErrProviderRequired    = &respons.AppError{Status: 403, Code: errsCode.ErrProviderRequired, Message: "provider account is required"}
+)
+
+const (
+	StockTypeSlugGaz = "gaz"
+
+	GazTypeExchange string = "exchange"
+	GazTypeRefill   string = "refill"
 )
 
 // ==================== Stock Type ====================
 
 type CreateStockTypeRequest struct {
-	Name string `json:"name" binding:"required,max=50"`
+	Name           string `json:"name" binding:"required,max=50"`
+	Slug           string `json:"slug" binding:"required,max=50"`
+	ProviderTypeID uint   `json:"provider_type_id" binding:"required"`
 }
 
 type UpdateStockTypeRequest struct {
-	Name string `json:"name" binding:"required,max=50"`
+	Name           *string `json:"name" binding:"omitempty,min=1,max=50"`
+	Slug           *string `json:"slug" binding:"omitempty,min=1,max=50"`
+	ProviderTypeID *uint   `json:"provider_type_id" binding:"omitempty,gt=0"`
 }
 
 type StockTypeResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID             uint   `json:"id"`
+	Name           string `json:"name"`
+	Slug           string `json:"slug"`
+	ProviderTypeID uint   `json:"provider_type_id"`
 }
 
 // ==================== Unit ====================
@@ -70,26 +89,50 @@ type UnitBalance struct {
 	Amount float64 `json:"amount"`
 }
 
+type Location struct {
+	Lat *float64 `json:"lat" binding:"required,gte=-90,lte=90"`
+	Lng *float64 `json:"lng" binding:"required,gte=-180,lte=180"`
+}
+
+type LocationResponse struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
 // ==================== Stock ====================
 
 type CreateStockRequest struct {
-	StockTypeID uint                `json:"stock_type_id" binding:"required"`
-	Units       []CreateUnitRequest `json:"units" binding:"required,min=1,dive"`
+	StockTypeID  uint                `json:"stock_type_id" binding:"required"`
+	StockType    string              `json:"stock_type" binding:"required"`
+	Address      string              `json:"address" binding:"required,min=10,max=200"`
+	Location     Location            `json:"location" binding:"required"`
+	Units        []CreateUnitRequest `json:"units" binding:"required,min=1,dive"`
+	StockDetails map[string]any      `json:"stock_details"`
+}
+
+type GazStockDetails struct {
+	GazStockType string `json:"gaz_stock_type"`
 }
 
 type UpdateStockRequest struct {
-	StockTypeID *uint `json:"stock_type_id" binding:"omitempty"`
+	StockTypeID  *uint          `json:"stock_type_id" binding:"omitempty"`
+	Address      *string        `json:"address" binding:"omitempty,min=10,max=200"`
+	Location     *Location      `json:"location" binding:"omitempty"`
+	StockDetails map[string]any `json:"stock_details" binding:"omitempty"`
 }
 
 type StockResponse struct {
-	ID        uuid.UUID         `json:"id"`
-	Available float64           `json:"available"` // in the main unit
-	Units     []UnitResponse    `json:"units"`
-	Balances  []UnitBalance     `json:"balances"` // available in every unit
-	StockType StockTypeResponse `json:"type"`
-	UserID    uuid.UUID         `json:"user_id"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	ID           uuid.UUID         `json:"id"`
+	Available    float64           `json:"available"` // in the main unit
+	Address      string            `json:"address"`
+	Location     LocationResponse  `json:"location"`
+	Units        []UnitResponse    `json:"units"`
+	Balances     []UnitBalance     `json:"balances"` // available in every unit
+	StockType    StockTypeResponse `json:"type"`
+	StockDetails map[string]any    `json:"stock_details"`
+	UserID       uuid.UUID         `json:"user_id"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
 }
 
 // ==================== Transaction ====================
@@ -132,27 +175,46 @@ func ToUnitResponse(u entities.Unit) UnitResponse {
 	}
 }
 
+func ToLocationResponse(p geo.Point) LocationResponse {
+	return LocationResponse{
+		Lat: p.Lat,
+		Lng: p.Lng,
+	}
+}
+
 func ToStockResponse(st *entities.Stock) StockResponse {
 	units := make([]UnitResponse, 0, len(st.Units))
 	balances := make([]UnitBalance, 0, len(st.Units))
 	for _, u := range st.Units {
 		units = append(units, ToUnitResponse(u))
+		amount := 0.0
+		if u.Rate > 0 {
+			amount = round2(st.Available / float64(u.Rate))
+		}
 		balances = append(balances, UnitBalance{
 			UnitID: u.ID,
 			Name:   u.Name,
-			Amount: round2(st.Available / float64(u.Rate)),
+			Amount: amount,
 		})
 	}
 
+	var details map[string]any
+	if len(st.StockDetails) > 0 {
+		_ = json.Unmarshal(st.StockDetails, &details)
+	}
+
 	return StockResponse{
-		ID:        st.ID,
-		Available: st.Available,
-		Units:     units,
-		Balances:  balances,
-		StockType: StockTypeResponse{ID: st.StockType.ID, Name: st.StockType.Name},
-		UserID:    st.UserID,
-		CreatedAt: st.CreatedAt,
-		UpdatedAt: st.UpdatedAt,
+		ID:           st.ID,
+		Available:    st.Available,
+		Address:      st.Address,
+		Location:     ToLocationResponse(st.Location),
+		Units:        units,
+		Balances:     balances,
+		StockType:    ToStockTypeResponse(&st.StockType),
+		StockDetails: details,
+		UserID:       st.UserID,
+		CreatedAt:    st.CreatedAt,
+		UpdatedAt:    st.UpdatedAt,
 	}
 }
 
@@ -171,8 +233,10 @@ func ToTransactionResponse(t *entities.Transaction) TransactionResponse {
 
 func ToStockTypeResponse(st *entities.StockType) StockTypeResponse {
 	return StockTypeResponse{
-		ID:   st.ID,
-		Name: st.Name,
+		ID:             st.ID,
+		Name:           st.Name,
+		Slug:           st.Slug,
+		ProviderTypeID: st.ProviderTypeID,
 	}
 }
 

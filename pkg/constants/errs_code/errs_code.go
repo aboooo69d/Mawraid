@@ -67,6 +67,10 @@ const (
 	ErrDuplicateUnitName   = 1609
 	ErrUnitHasTransactions = 1610
 	ErrStockAlreadyExists  = 1611
+	ErrStockTypeMismatch   = 1612
+	ErrInvalidStockDetails = 1613
+	ErrStockTypeNotAllowed = 1614
+	ErrProviderRequired    = 1615
 )
 
 const (
