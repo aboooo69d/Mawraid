@@ -2,9 +2,11 @@ package errs_code
 
 const (
 	// User Errors: 1000-1099
-	ErrUserNotFound       = 1000
-	ErrPhoneAlreadyExists = 1001
-	ErrPhoneNotFound      = 1002
+	ErrUserNotFound              = 1000
+	ErrPhoneAlreadyExists        = 1001
+	ErrPhoneNotFound             = 1002
+	ErrProviderTypeNotFound      = 1003
+	ErrProviderTypeAlreadyExists = 1004
 )
 
 const (

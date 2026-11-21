@@ -16,10 +16,31 @@ var (
 	}
 	ErrUserNotFound       = &respons.AppError{Status: 404, Code: errsCode.ErrUserNotFound, Message: "user not found"}
 	ErrInvalidProfileType = &respons.AppError{Status: 400, Code: errsCode.ErrInvalidProfileType, Message: "user cannot be both provider and consumer at the same time"}
-	ErrPhoneNotFound      = &respons.AppError{Status: 404, Code: errsCode.ErrPhoneNotFound, Message: "this account not found"}
-	ErrAcountNotActive    = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotActive, Message: "account is not active"}
-	ErrAcountNotVerify    = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotVerify, Message: "account is not verified"}
+	ErrPhoneNotFound             = &respons.AppError{Status: 404, Code: errsCode.ErrPhoneNotFound, Message: "this account not found"}
+	ErrAcountNotActive           = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotActive, Message: "account is not active"}
+	ErrAcountNotVerify           = &respons.AppError{Status: 403, Code: errsCode.ErrAcountNotVerify, Message: "account is not verified"}
+	ErrProviderTypeNotFound      = &respons.AppError{Status: 404, Code: errsCode.ErrProviderTypeNotFound, Message: "provider type not found"}
+	ErrProviderTypeAlreadyExists = &respons.AppError{Status: 409, Code: errsCode.ErrProviderTypeAlreadyExists, Message: "provider type with this name or slug already exists"}
 )
+
+type CreateProviderTypeRequest struct {
+	Name string `json:"name" binding:"required,min=2,max=100"`
+	Slug string `json:"slug" binding:"required,min=2,max=50"`
+}
+
+type ProviderTypeResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+func ToProviderTypeResponse(pt *entities.ProviderType) ProviderTypeResponse {
+	return ProviderTypeResponse{
+		ID:   pt.ID,
+		Name: pt.Name,
+		Slug: pt.Slug,
+	}
+}
 
 type UserBase struct {
 	Phone    string `json:"phone" binding:"required,yemen_phone"`
@@ -28,10 +49,11 @@ type UserBase struct {
 
 type CreateProviderRequest struct {
 	UserBase
-	Name        string    `json:"name" binding:"required,min=10,max=50"`
-	Description string    `json:"description" binding:"max=1000"`
-	StartAt     time.Time `json:"start_at" binding:"required"`
-	EndAt       time.Time `json:"end_at" binding:"required,gtfield=StartAt"`
+	Name           string    `json:"name" binding:"required,min=10,max=50"`
+	Description    string    `json:"description" binding:"max=1000"`
+	StartAt        time.Time `json:"start_at" binding:"required"`
+	EndAt          time.Time `json:"end_at" binding:"required,gtfield=StartAt"`
+	ProviderTypeID uint      `json:"provider_type_id" binding:"required"`
 }
 
 type CreateConsumerRequest struct {
@@ -62,10 +84,11 @@ type UpdateUserRequest struct {
 }
 
 type UpdateProviderRequest struct {
-	Name        *string    `json:"name,omitempty" binding:"omitempty,max=250"`
-	Description *string    `json:"description,omitempty" binding:"omitempty,max=1000"`
-	StartAt     *time.Time `json:"start_at,omitempty"`
-	EndAt       *time.Time `json:"end_at,omitempty"`
+	Name           *string    `json:"name,omitempty" binding:"omitempty,max=250"`
+	Description    *string    `json:"description,omitempty" binding:"omitempty,max=1000"`
+	StartAt        *time.Time `json:"start_at,omitempty"`
+	EndAt          *time.Time `json:"end_at,omitempty"`
+	ProviderTypeID *uint      `json:"provider_type_id,omitempty" binding:"omitempty,gt=0"`
 }
 
 type UpdateConsumerRequest struct {
@@ -95,10 +118,12 @@ type UserResponseBase struct {
 
 type ProviderResponse struct {
 	UserResponseBase
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	StartAt     time.Time `json:"start_at"`
-	EndAt       time.Time `json:"end_at"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description"`
+	StartAt        time.Time            `json:"start_at"`
+	EndAt          time.Time            `json:"end_at"`
+	ProviderTypeID uint                 `json:"provider_type_id"`
+	ProviderType   ProviderTypeResponse `json:"provider_type"`
 }
 
 type ConsumerResponse struct {
@@ -136,6 +161,8 @@ func ToProviderResponse(user *entities.User) *ProviderResponse {
 		Description:      user.Provider.Description,
 		StartAt:          user.Provider.StartAt,
 		EndAt:            user.Provider.EndAt,
+		ProviderTypeID:   user.Provider.ProviderTypeID,
+		ProviderType:     ToProviderTypeResponse(&user.Provider.ProviderType),
 	}
 }
 func ToConsumerResponse(user *entities.User) *ConsumerResponse {
@@ -184,10 +211,12 @@ type UserDetailResponse struct {
 }
 
 type ProviderInfo struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	StartAt     time.Time `json:"start_at"`
-	EndAt       time.Time `json:"end_at"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description"`
+	StartAt        time.Time            `json:"start_at"`
+	EndAt          time.Time            `json:"end_at"`
+	ProviderTypeID uint                 `json:"provider_type_id"`
+	ProviderType   ProviderTypeResponse `json:"provider_type"`
 }
 
 type ConsumerInfo struct {
@@ -207,7 +236,14 @@ type ConsumerInfo struct {
 func ToUserDetailResponse(user *entities.User) *UserDetailResponse {
 	res := &UserDetailResponse{UserResponseBase: *ToUserResponse(user)}
 	if p := user.Provider; p != nil {
-		res.Provider = &ProviderInfo{Name: p.Name, Description: p.Description, StartAt: p.StartAt, EndAt: p.EndAt}
+		res.Provider = &ProviderInfo{
+			Name:           p.Name,
+			Description:    p.Description,
+			StartAt:        p.StartAt,
+			EndAt:          p.EndAt,
+			ProviderTypeID: p.ProviderTypeID,
+			ProviderType:   ToProviderTypeResponse(&p.ProviderType),
+		}
 	}
 	if c := user.Consumer; c != nil {
 		res.Consumer = &ConsumerInfo{
