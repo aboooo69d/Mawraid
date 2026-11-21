@@ -2,6 +2,8 @@ package auth_test
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
@@ -12,14 +14,18 @@ import (
 
 // mockUserRepo is an in-memory mock implementing userRepo.UserRepo.
 type mockUserRepo struct {
-	usersByPhone map[string]*entities.User
-	usersByID    map[string]*entities.User
+	usersByPhone       map[string]*entities.User
+	usersByID          map[string]*entities.User
+	providerTypes      map[uint]*entities.ProviderType
+	nextProviderTypeID uint
 }
 
 func newMockUserRepo() *mockUserRepo {
 	return &mockUserRepo{
-		usersByPhone: make(map[string]*entities.User),
-		usersByID:    make(map[string]*entities.User),
+		usersByPhone:       make(map[string]*entities.User),
+		usersByID:          make(map[string]*entities.User),
+		providerTypes:      make(map[uint]*entities.ProviderType),
+		nextProviderTypeID: 1,
 	}
 }
 
@@ -139,4 +145,48 @@ func (m *mockUserRepo) UpdateUserStatus(c context.Context, id string, status ent
 	}
 	u.Status = status
 	return nil
+}
+
+func (m *mockUserRepo) CreateProviderType(c context.Context, providerType *entities.ProviderType) error {
+	for _, existing := range m.providerTypes {
+		if strings.EqualFold(existing.Name, providerType.Name) || strings.EqualFold(existing.Slug, providerType.Slug) {
+			return gorm.ErrDuplicatedKey
+		}
+	}
+	if providerType.ID == 0 {
+		providerType.ID = m.nextProviderTypeID
+		m.nextProviderTypeID++
+	}
+	copyPt := *providerType
+	m.providerTypes[providerType.ID] = &copyPt
+	return nil
+}
+
+func (m *mockUserRepo) GetProviderTypes(c context.Context) ([]entities.ProviderType, error) {
+	list := make([]entities.ProviderType, 0, len(m.providerTypes))
+	for _, pt := range m.providerTypes {
+		list = append(list, *pt)
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].ID < list[j].ID
+	})
+	return list, nil
+}
+
+func (m *mockUserRepo) GetProviderTypeById(c context.Context, id uint) (*entities.ProviderType, error) {
+	pt, ok := m.providerTypes[id]
+	if !ok {
+		return nil, gorm.ErrRecordNotFound
+	}
+	copyPt := *pt
+	return &copyPt, nil
+}
+
+func (m *mockUserRepo) ProviderTypeExistsByNameOrSlug(c context.Context, name string, slug string) (bool, error) {
+	for _, pt := range m.providerTypes {
+		if strings.EqualFold(pt.Name, name) || strings.EqualFold(pt.Slug, slug) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
