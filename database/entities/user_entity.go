@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type UserStatus string
@@ -31,12 +32,20 @@ type User struct {
 }
 
 type Provider struct {
-	UserID      uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
-	Name        string    `gorm:"type:varchar(250);not null" json:"name"`
-	Description string    `gorm:"type:varchar(1000)" json:"description"`
-	StartAt     time.Time `json:"start_at"`
-	EndAt       time.Time `json:"end_at"`
+	UserID         uuid.UUID    `gorm:"type:uuid;primaryKey" json:"user_id"`
+	Name           string       `gorm:"type:varchar(250);not null" json:"name"`
+	Description    string       `gorm:"type:varchar(1000)" json:"description"`
+	StartAt        time.Time    `json:"start_at"`
+	EndAt          time.Time    `json:"end_at"`
+	ProviderTypeID uint         `gorm:"not null;index" json:"provider_type_id"`
+	ProviderType   ProviderType `gorm:"foreignKey:ProviderTypeID" json:"provider_type"`
 	TimeStamp
+}
+
+type ProviderType struct {
+	gorm.Model
+	Name string `gorm:"type:varchar(100);unique;not null" json:"name"`
+	Slug string `gorm:"type:varchar(50);uniqueIndex;not null" json:"slug"`
 }
 
 type Consumer struct {

@@ -51,6 +51,7 @@ func AutoMigrateAndSeed(db *gorm.DB) error {
 		&entities.Role{},
 		&entities.Permission{},
 		&entities.User{},
+		&entities.ProviderType{},
 		&entities.Provider{},
 		&entities.Consumer{},
 		&entities.Stock{},
