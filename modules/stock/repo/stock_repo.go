@@ -2,26 +2,22 @@ package stockRepo
 
 import (
 	"context"
-	"errors"
 
 	"github.com/najm-x/nova/database/entities"
 	"gorm.io/gorm"
-)
-
-var (
-	ErrStockAlreadyExists = errors.New("user already has a stock")
 )
 
 type (
 	StockRepo interface {
 		CreateStock(c context.Context, stock *entities.Stock) error
 		GetStockById(c context.Context, id string) (*entities.Stock, error)
-		GetStockByUserId(c context.Context, userId string) (entities.Stock, error)
-		UserHasStock(c context.Context, userId string) (bool, error)
-		StockTypeExists(c context.Context, id uint) (bool, error)
+		GetStocksByUserId(c context.Context, userId string) ([]entities.Stock, error)
+		GetStockTypeById(c context.Context, id uint) (*entities.StockType, error)
+		GetStockTypes(c context.Context) ([]entities.StockType, error)
+		GetStockTypesByProviderTypeId(c context.Context, providerTypeId uint) ([]entities.StockType, error)
+		GetProviderTypeIdByUserId(c context.Context, userId string) (uint, error)
 		UpdateStock(c context.Context, id string, stock *entities.Stock) error
 		DeleteStock(c context.Context, id string) error
-		GetStockTypes(c context.Context) ([]entities.StockType, error)
 	}
 
 	stockRepo struct {
@@ -78,29 +74,47 @@ func (r *stockRepo) GetStockById(c context.Context, id string) (*entities.Stock,
 	return &stock, nil
 }
 
-func (r *stockRepo) GetStockByUserId(c context.Context, userId string) (entities.Stock, error) {
-	return gorm.G[entities.Stock](r.db).Preload("StockType", nil).Preload("Units", func(db gorm.PreloadBuilder) error {
-		db.Order("is_main DESC, rate ASC")
-		return nil
-	}).Where("user_id = ?", userId).First(c)
-}
-
-func (r *stockRepo) UserHasStock(c context.Context, userId string) (bool, error) {
-	var count int64
-	err := r.db.WithContext(c).
-		Model(&entities.Stock{}).
+func (r *stockRepo) GetStocksByUserId(c context.Context, userId string) ([]entities.Stock, error) {
+	return gorm.G[entities.Stock](r.db).
+		Preload("StockType", nil).
+		Preload("Units", func(db gorm.PreloadBuilder) error {
+			db.Order("is_main DESC, rate ASC")
+			return nil
+		}).
 		Where("user_id = ?", userId).
-		Count(&count).Error
-	return count > 0, err
+		Order("created_at DESC").
+		Find(c)
 }
 
-func (r *stockRepo) StockTypeExists(c context.Context, id uint) (bool, error) {
-	var count int64
-	err := r.db.WithContext(c).
-		Model(&entities.StockType{}).
+func (r *stockRepo) GetStockTypeById(c context.Context, id uint) (*entities.StockType, error) {
+	st, err := gorm.G[entities.StockType](r.db).
 		Where("id = ?", id).
-		Count(&count).Error
-	return count > 0, err
+		First(c)
+	if err != nil {
+		return nil, err
+	}
+	return &st, nil
+}
+
+func (r *stockRepo) GetStockTypes(c context.Context) ([]entities.StockType, error) {
+	return gorm.G[entities.StockType](r.db).Order("id ASC").Find(c)
+}
+
+func (r *stockRepo) GetStockTypesByProviderTypeId(c context.Context, providerTypeId uint) ([]entities.StockType, error) {
+	return gorm.G[entities.StockType](r.db).
+		Where("provider_type_id = ?", providerTypeId).
+		Order("id ASC").
+		Find(c)
+}
+
+func (r *stockRepo) GetProviderTypeIdByUserId(c context.Context, userId string) (uint, error) {
+	provider, err := gorm.G[entities.Provider](r.db).
+		Where("user_id = ?", userId).
+		First(c)
+	if err != nil {
+		return 0, err
+	}
+	return provider.ProviderTypeID, nil
 }
 
 func (r *stockRepo) UpdateStock(c context.Context, id string, stock *entities.Stock) error {
@@ -108,8 +122,13 @@ func (r *stockRepo) UpdateStock(c context.Context, id string, stock *entities.St
 	res := r.db.WithContext(c).
 		Model(&entities.Stock{}).
 		Where("id = ?", id).
-		Select("StockTypeID").
-		Updates(&entities.Stock{StockTypeID: stock.StockTypeID})
+		Select("StockTypeID", "Address", "Location", "StockDetails").
+		Updates(&entities.Stock{
+			StockTypeID:  stock.StockTypeID,
+			Address:      stock.Address,
+			Location:     stock.Location,
+			StockDetails: stock.StockDetails,
+		})
 	if res.Error != nil {
 		return res.Error
 	}
@@ -132,8 +151,4 @@ func (r *stockRepo) DeleteStock(c context.Context, id string) error {
 		}
 		return tx.Where("stock_id = ?", id).Delete(&entities.Unit{}).Error
 	})
-}
-
-func (r *stockRepo) GetStockTypes(c context.Context) ([]entities.StockType, error) {
-	return gorm.G[entities.StockType](r.db).Find(c)
 }
