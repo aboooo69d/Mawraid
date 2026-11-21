@@ -19,7 +19,7 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler, cfg *config
 		auth.POST("/verify-phone", h.VerifyPhone)
 		auth.POST("/resend-otp", h.ResendOtp)
 		auth.POST("/forget-password", h.ForgetPassword)
-		auth.POST("/reset-password", h.ResetPassword)
+		authWithOutTurnstile.POST("/reset-password", h.ResetPassword)
 		authWithOutTurnstile.POST("/logout", h.LogOut)
 
 	}
