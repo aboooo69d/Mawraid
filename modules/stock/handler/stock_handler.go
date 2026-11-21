@@ -21,15 +21,16 @@ func NewStockHandler(s stockService.StockService) *ServiceHandler {
 
 // CreateStock godoc
 // @Summary      Create a new stock
-// @Description  Create a stock for the authenticated user together with its units (exactly one main unit with rate = 1). Each user can only have one stock.
+// @Description  Create a stock for the authenticated provider together with its units (exactly one main unit with rate = 1).
 // @Tags         Stock
 // @Accept       json
 // @Produce      json
 // @Param        request  body      stockDto.CreateStockRequest  true  "Stock creation payload"
 // @Success      200      {object}  respons.Response{data=stockDto.StockResponse}  "Stock created successfully"
-// @Failure      400      {object}  respons.Response  "Invalid request or unit validation error"
+// @Failure      400      {object}  respons.Response  "Invalid request, stock type mismatch, invalid stock details, or unit validation error"
+// @Failure      403      {object}  respons.Response  "Provider account required or stock type not allowed"
 // @Failure      404      {object}  respons.Response  "Stock type not found"
-// @Failure      409      {object}  respons.Response  "Duplicate unit name or user already has a stock"
+// @Failure      409      {object}  respons.Response  "Duplicate unit name"
 // @Failure      500      {object}  respons.Response  "Internal server error"
 // @Router       /stocks [post]
 func (h *ServiceHandler) CreateStock(ctx *gin.Context) {
@@ -49,25 +50,25 @@ func (h *ServiceHandler) CreateStock(ctx *gin.Context) {
 	respons.OK(ctx, stockInfo)
 }
 
-// GetStocks godoc
+// GetUserStocks godoc
 // @Summary      List user stocks
-// @Description  Returns a paginated list of stocks owned by the authenticated user.
+// @Description  Returns all stocks owned by the authenticated user.
 // @Tags         Stock
 // @Produce      json
 // @Success      200        {object}  respons.Response{data=[]stockDto.StockResponse}  "Stocks retrieved successfully"
-// @Failure      400        {object}  respons.Response  "Invalid pagination parameters"
+// @Failure      400        {object}  respons.Response  "Invalid user ID"
 // @Failure      500        {object}  respons.Response  "Internal server error"
 // @Router       /stocks [get]
-func (h *ServiceHandler) GetUserStock(ctx *gin.Context) {
+func (h *ServiceHandler) GetUserStocks(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 
-	stock, err := h.stockService.GetUserStock(ctx.Request.Context(), userId)
+	stocks, err := h.stockService.GetUserStocks(ctx.Request.Context(), userId)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	respons.OK(ctx, stock)
+	respons.OK(ctx, stocks)
 }
 
 // GetStock godoc
@@ -252,10 +253,23 @@ func (h *ServiceHandler) GetTransactions(ctx *gin.Context) {
 	respons.OKWithMeta(ctx, txs, meta)
 }
 
+// GetStockTypes godoc
+// @Summary      List stock types
+// @Description  Returns stock types available for the authenticated user's provider type (or all stock types for admin).
+// @Tags         Stock
+// @Produce      json
+// @Success      200  {object}  respons.Response{data=[]stockDto.StockTypeResponse}  "Stock types retrieved successfully"
+// @Failure      400  {object}  respons.Response  "Invalid user ID"
+// @Failure      403  {object}  respons.Response  "Provider account required"
+// @Failure      500  {object}  respons.Response  "Internal server error"
+// @Router       /stocks/types [get]
 func (h *ServiceHandler) GetStockTypes(ctx *gin.Context) {
-	stockTypes, err := h.stockService.GetStockTypes(ctx.Request.Context())
+	userId := ctx.GetString("user_id")
+	role := ctx.GetString("role")
+
+	stockTypes, err := h.stockService.GetStockTypes(ctx.Request.Context(), userId, role)
 	if err != nil {
-		_ = ctx.Error(stockDto.ErrStockTypeNotFound)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -285,16 +299,4 @@ func getUnitID(ctx *gin.Context) (uint, bool) {
 		return 0, false
 	}
 	return uint(id), true
-}
-
-func parsePositiveIntQuery(ctx *gin.Context, key string) (int, bool) {
-	raw, exists := ctx.GetQuery(key)
-	if !exists || raw == "" {
-		return 0, true
-	}
-	val, err := strconv.Atoi(raw)
-	if err != nil || val < 1 {
-		return 0, false
-	}
-	return val, true
 }

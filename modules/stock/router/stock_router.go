@@ -11,7 +11,7 @@ func RegisterStockRoutes(rg *gin.RouterGroup, h *handler.ServiceHandler) {
 	{
 		stocks.GET("/types", h.GetStockTypes)
 		stocks.POST("", h.CreateStock)
-		stocks.GET("", h.GetUserStock)
+		stocks.GET("", h.GetUserStocks)
 		stocks.GET("/:stock_id", h.GetStock)
 
 		stocks.POST("/:stock_id/units", h.AddUnit)

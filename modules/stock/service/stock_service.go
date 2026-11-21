@@ -2,14 +2,20 @@ package stockService
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"math"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
+	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	stockDto "github.com/najm-x/nova/modules/stock/dto"
 	stockRepo "github.com/najm-x/nova/modules/stock/repo"
+	"github.com/najm-x/nova/pkg/geo"
 	"github.com/najm-x/nova/pkg/respons"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +28,7 @@ type (
 	StockService interface {
 		// Stock
 		CreateStock(c context.Context, userId string, req stockDto.CreateStockRequest) (*stockDto.StockResponse, error)
-		GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error)
+		GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error)
 		GetStock(c context.Context, userId string, stockId string) (*stockDto.StockResponse, error)
 
 		// Units
@@ -32,7 +38,7 @@ type (
 		// Transactions (add to / withdraw from the stock)
 		CreateTransaction(c context.Context, userId string, stockId string, req stockDto.CreateTransactionRequest) (*stockDto.TransactionResponse, error)
 		GetTransactions(c context.Context, userId string, stockId string, q stockDto.TransactionQuery) ([]stockDto.TransactionResponse, *respons.Meta, error)
-		GetStockTypes(c context.Context) ([]stockDto.StockTypeResponse, error)
+		GetStockTypes(c context.Context, userId string, role string) ([]stockDto.StockTypeResponse, error)
 	}
 
 	stockService struct {
@@ -56,28 +62,56 @@ func NewStockService(
 
 // ==================== Stock ====================
 
-// CreateStock creates a stock for the user together with its units.
-// A user can only have one stock. Exactly one unit must be the main unit (is_main = true, rate = 1).
+// CreateStock creates a stock for the provider together with its units.
+// Exactly one unit must be the main unit (is_main = true, rate = 1).
 func (s *stockService) CreateStock(c context.Context, userId string, req stockDto.CreateStockRequest) (*stockDto.StockResponse, error) {
 	uid, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, respons.ErrBadRequest
 	}
 
-	hasStock, err := s.stockRepo.UserHasStock(c, userId)
+	providerTypeID, err := s.stockRepo.GetProviderTypeIdByUserId(c, userId)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stockDto.ErrProviderRequired
+		}
 		return nil, err
-	}
-	if hasStock {
-		return nil, stockDto.ErrStockAlreadyExists
 	}
 
-	exists, err := s.stockRepo.StockTypeExists(c, req.StockTypeID)
+	stockType, err := s.stockRepo.GetStockTypeById(c, req.StockTypeID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stockDto.ErrStockTypeNotFound
+		}
 		return nil, err
 	}
-	if !exists {
-		return nil, stockDto.ErrStockTypeNotFound
+
+	if stockType.ProviderTypeID != providerTypeID {
+		return nil, stockDto.ErrStockTypeNotAllowed
+	}
+
+	if !strings.EqualFold(strings.TrimSpace(req.StockType), strings.TrimSpace(stockType.Slug)) {
+		return nil, stockDto.ErrStockTypeMismatch
+	}
+
+	address := strings.TrimSpace(req.Address)
+	addrLen := utf8.RuneCountInString(address)
+	if addrLen < 10 || addrLen > 200 {
+		return nil, respons.ErrBadRequest
+	}
+
+	if req.Location.Lat == nil || req.Location.Lng == nil {
+		return nil, respons.ErrBadRequest
+	}
+	lat, lng := *req.Location.Lat, *req.Location.Lng
+	if math.IsNaN(lat) || math.IsInf(lat, 0) || lat < -90 || lat > 90 ||
+		math.IsNaN(lng) || math.IsInf(lng, 0) || lng < -180 || lng > 180 {
+		return nil, respons.ErrBadRequest
+	}
+
+	stockDetails, err := buildStockDetails(stockType.Slug, req.StockDetails)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := validateNewUnits(req.Units); err != nil {
@@ -85,10 +119,13 @@ func (s *stockService) CreateStock(c context.Context, userId string, req stockDt
 	}
 
 	stock := &entities.Stock{
-		ID:          uuid.New(),
-		StockTypeID: req.StockTypeID,
-		UserID:      uid,
-		Units:       make([]entities.Unit, 0, len(req.Units)),
+		ID:           uuid.New(),
+		Address:      address,
+		Location:     geo.Point{Lat: lat, Lng: lng},
+		StockTypeID:  stockType.ID,
+		UserID:       uid,
+		StockDetails: stockDetails,
+		Units:        make([]entities.Unit, 0, len(req.Units)),
 	}
 	for _, u := range req.Units {
 		stock.Units = append(stock.Units, entities.Unit{
@@ -106,14 +143,21 @@ func (s *stockService) CreateStock(c context.Context, userId string, req stockDt
 	return s.GetStock(c, userId, stock.ID.String())
 }
 
-func (s *stockService) GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error) {
+func (s *stockService) GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error) {
+	if _, err := uuid.Parse(userId); err != nil {
+		return nil, respons.ErrBadRequest
+	}
 
-	stock, err := s.stockRepo.GetStockByUserId(c, userId)
+	stocks, err := s.stockRepo.GetStocksByUserId(c, userId)
 	if err != nil {
 		return nil, err
 	}
-	res := stockDto.ToStockResponse(&stock)
-	return &res, nil
+
+	res := make([]stockDto.StockResponse, 0, len(stocks))
+	for i := range stocks {
+		res = append(res, stockDto.ToStockResponse(&stocks[i]))
+	}
+	return res, nil
 }
 
 // GetStock returns the stock info, its units and the available quantity in every unit.
@@ -126,18 +170,36 @@ func (s *stockService) GetStock(c context.Context, userId string, stockId string
 	return &res, nil
 }
 
-func (s *stockService) GetStockTypes(c context.Context) ([]stockDto.StockTypeResponse, error) {
+func (s *stockService) GetStockTypes(c context.Context, userId string, role string) ([]stockDto.StockTypeResponse, error) {
+	var stockTypes []entities.StockType
+	var err error
 
-	stockTypes, err := s.stockRepo.GetStockTypes(c)
-	if err != nil {
-		return nil, err
+	if role == roleRepo.RoleAdmin {
+		stockTypes, err = s.stockRepo.GetStockTypes(c)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := uuid.Parse(userId); err != nil {
+			return nil, respons.ErrBadRequest
+		}
+		providerTypeID, err := s.stockRepo.GetProviderTypeIdByUserId(c, userId)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, stockDto.ErrProviderRequired
+			}
+			return nil, err
+		}
+		stockTypes, err = s.stockRepo.GetStockTypesByProviderTypeId(c, providerTypeID)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	types := make([]stockDto.StockTypeResponse, 0, len(stockTypes))
-
-	for _, val := range stockTypes {
-		types = append(types, stockDto.ToStockTypeResponse(&val))
+	for i := range stockTypes {
+		types = append(types, stockDto.ToStockTypeResponse(&stockTypes[i]))
 	}
-
 	return types, nil
 }
 
@@ -271,6 +333,36 @@ func (s *stockService) GetTransactions(c context.Context, userId string, stockId
 
 // ==================== Helpers ====================
 
+func buildStockDetails(stockTypeSlug string, details map[string]any) (datatypes.JSON, error) {
+	if strings.EqualFold(strings.TrimSpace(stockTypeSlug), stockDto.StockTypeSlugGaz) {
+		if len(details) == 0 {
+			return nil, stockDto.ErrInvalidStockDetails
+		}
+		raw, ok := details["gaz_stock_type"].(string)
+		if !ok {
+			return nil, stockDto.ErrInvalidStockDetails
+		}
+		gazType := strings.ToLower(strings.TrimSpace(raw))
+		if gazType != stockDto.GazTypeExchange && gazType != stockDto.GazTypeRefill {
+			return nil, stockDto.ErrInvalidStockDetails
+		}
+		b, err := json.Marshal(stockDto.GazStockDetails{GazStockType: gazType})
+		if err != nil {
+			return nil, stockDto.ErrInvalidStockDetails
+		}
+		return datatypes.JSON(b), nil
+	}
+
+	if len(details) == 0 {
+		return nil, nil
+	}
+	b, err := json.Marshal(details)
+	if err != nil {
+		return nil, stockDto.ErrInvalidStockDetails
+	}
+	return datatypes.JSON(b), nil
+}
+
 // getOwnedStock returns the stock (with units and type) only if it belongs to userId.
 // A stock of another user is reported as "not found" so its existence is not leaked.
 func (s *stockService) getOwnedStock(c context.Context, stockId string, userId string) (*entities.Stock, error) {
@@ -301,11 +393,17 @@ func validateNewUnits(units []stockDto.CreateUnitRequest) error {
 	seen := make(map[string]bool, len(units))
 	for _, u := range units {
 		key := strings.ToLower(strings.TrimSpace(u.Name))
+		if key == "" {
+			return respons.ErrBadRequest
+		}
 		if seen[key] {
 			return stockDto.ErrDuplicateUnitName
 		}
 		seen[key] = true
 
+		if u.Rate < 1 {
+			return respons.ErrBadRequest
+		}
 		if u.IsMain {
 			mainCount++
 			if u.Rate != 1 {
@@ -351,8 +449,6 @@ func mapRepoErr(err error) error {
 		return respons.ErrBadRequest
 	case errors.Is(err, stockRepo.ErrUnitHasTransactions):
 		return stockDto.ErrUnitHasTransactions
-	case errors.Is(err, stockRepo.ErrStockAlreadyExists):
-		return stockDto.ErrStockAlreadyExists
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return stockDto.ErrStockNotFound
 	}
