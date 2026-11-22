@@ -14,6 +14,7 @@ import (
 	"github.com/najm-x/nova/config"
 	"github.com/najm-x/nova/middleware"
 	"github.com/najm-x/nova/pkg/appcontainer"
+	"github.com/najm-x/nova/pkg/logger"
 )
 
 // @title           Nova API
@@ -30,6 +31,8 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 func main() {
+	logger.Init()
+
 	// 1. Initialize configuration from environment / .env
 	cfg := config.NewConfig()
 

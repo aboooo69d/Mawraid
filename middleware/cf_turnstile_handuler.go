@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/config"
 	"github.com/najm-x/nova/pkg/constants/errs_code"
+	"github.com/najm-x/nova/pkg/logger"
 	"github.com/najm-x/nova/pkg/respons"
 )
 
@@ -35,16 +37,46 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 			Message: "invalid or missing turnstile token",
 		}
 
+		log := logger.Log.With(
+			"middleware", "cf_turnstile",
+			"method", ctx.Request.Method,
+			"path", ctx.Request.URL.Path,
+			"client_ip", ctx.ClientIP(),
+		)
+
 		// 1. Get token
 		token := ctx.GetHeader("cf-turnstile-response")
 
-		if token == "" || len(token) > maxTokenLength {
+		if token == "" {
+			log.Warn("turnstile verification failed", "reason", "missing_token")
+			respons.Abort(ctx, reqErr)
+			return
+		}
+		if len(token) > maxTokenLength {
+			log.Warn(
+				"turnstile verification failed",
+				"reason", "token_too_long",
+				"token_length", len(token),
+				"max_length", maxTokenLength,
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
 
 		// 2. Validate configuration
-		if cfg.Turnstile.SecretKey == "" || len(cfg.Turnstile.Hostnames) == 0 {
+		if cfg == nil || cfg.Turnstile.SecretKey == "" || len(cfg.Turnstile.Hostnames) == 0 {
+			missingSecret := cfg == nil || cfg.Turnstile.SecretKey == ""
+			hostnamesCount := 0
+			if cfg != nil {
+				hostnamesCount = len(cfg.Turnstile.Hostnames)
+			}
+			log.Error(
+				"turnstile verification failed",
+				"reason", "invalid_configuration",
+				"nil_config", cfg == nil,
+				"missing_secret_key", missingSecret,
+				"hostnames_count", hostnamesCount,
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -72,6 +104,11 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 		)
 
 		if err != nil {
+			log.Error(
+				"turnstile verification failed",
+				"reason", "create_request_failed",
+				"error", err.Error(),
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -85,12 +122,24 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 
 		resp, err := client.Do(req)
 		if err != nil {
+			log.Error(
+				"turnstile verification failed",
+				"reason", "cloudflare_request_failed",
+				"error", err.Error(),
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			bodySnippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+			log.Error(
+				"turnstile verification failed",
+				"reason", "cloudflare_unexpected_status",
+				"status_code", resp.StatusCode,
+				"response_body", string(bodySnippet),
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -99,12 +148,24 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 		var result TurnstileResponse
 
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			log.Error(
+				"turnstile verification failed",
+				"reason", "decode_response_failed",
+				"error", err.Error(),
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
 
 		// 6. Validate response
 		if !result.Success {
+			log.Warn(
+				"turnstile verification failed",
+				"reason", "cloudflare_rejected_token",
+				"error_codes", result.ErrorCodes,
+				"hostname", result.Hostname,
+				"action", result.Action,
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
@@ -127,6 +188,12 @@ func CfTurnstileHanduler(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		if !validHostname {
+			log.Warn(
+				"turnstile verification failed",
+				"reason", "hostname_mismatch",
+				"received_hostname", result.Hostname,
+				"allowed_hostnames", cfg.Turnstile.Hostnames,
+			)
 			respons.Abort(ctx, reqErr)
 			return
 		}
