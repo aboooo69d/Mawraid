@@ -1,3 +1,4 @@
 .env
+.env.test
 *.md
 admin_users_frontend_ar.md

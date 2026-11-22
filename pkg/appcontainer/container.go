@@ -78,10 +78,10 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		return nil, fmt.Errorf("appcontainer: postgres error: %w", err)
 	}
 
-	// 2. Auto-migrate schema and seed required roles
-	if err := database.AutoMigrateAndSeed(db); err != nil {
-		return nil, fmt.Errorf("appcontainer: migration error: %w", err)
-	}
+	// // 2. Auto-migrate schema and seed required roles
+	// if err := database.AutoMigrateAndSeed(db); err != nil {
+	// 	return nil, fmt.Errorf("appcontainer: migration error: %w", errcon)
+	// }
 
 	// 3. Connect to Redis
 	rdb, err := database.NewRedis(cfg.Redis)

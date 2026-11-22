@@ -28,8 +28,8 @@ type DatabaseConfig struct {
 
 // DSN returns the PostgreSQL connection string.
 func (d DatabaseConfig) DSN() string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
-		d.Host, d.User, d.Password, d.DBName, d.Port, d.SSLMode)
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require channel_binding=require TimeZone=UTC",
+		d.Host, d.User, d.Password, d.DBName, d.Port)
 }
 
 type RedisConfig struct {
@@ -78,7 +78,7 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	_ = godotenv.Load()
+	_ = godotenv.Load(".env.test")
 
 	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 	size, _ := strconv.Atoi(getEnv("SESSION_SIZE", "0"))
@@ -94,7 +94,7 @@ func NewConfig() *Config {
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			DBName:   getEnv("DB_NAME", "nova"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			SSLMode:  getEnv("DB_SSLMODE", "require"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),

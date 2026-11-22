@@ -1,0 +1,30 @@
+# Git & VCS
+.git
+.gitignore
+
+# Secrets & environment files (pass env vars at runtime)
+.env
+.env.*
+
+# Documentation & non-Go artifacts (keep docs/docs.go because it is imported by appcontainer)
+*.md
+docs/*.md
+docs/swagger.json
+docs/swagger.yaml
+
+# Tests (not needed to build ./cmd/api)
+tests/
+**/*_test.go
+
+# Container & IDE files
+Dockerfile
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+.vscode/
+.idea/
+
+# Local build outputs & logs
+bin/
+tmp/
+*.log
