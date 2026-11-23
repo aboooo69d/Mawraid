@@ -74,6 +74,11 @@ const (
 )
 
 const (
+	// Address Errors: 1700-1799
+	ErrAddressNotFound = 1700
+)
+
+const (
 	// Server Errors: 5000-5099
 	ErrInternalServer = 5000
 )

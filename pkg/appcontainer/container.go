@@ -10,6 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/najm-x/nova/config"
 	"github.com/najm-x/nova/middleware"
+	addressHandler "github.com/najm-x/nova/modules/address/handler"
+	addressRepo "github.com/najm-x/nova/modules/address/repo"
+	addressRouter "github.com/najm-x/nova/modules/address/router"
+	addressService "github.com/najm-x/nova/modules/address/service"
 	authHandler "github.com/najm-x/nova/modules/auth/handler"
 	authRepo "github.com/najm-x/nova/modules/auth/repo"
 	authRouter "github.com/najm-x/nova/modules/auth/router"
@@ -61,9 +65,10 @@ type AppContainer struct {
 	StockService stockService.StockService
 
 	// Handlers
-	AuthHandler  *authHandler.AuthHandler
-	StockHandler *stockHandler.ServiceHandler
-	UserHandler  *userHandler.UserHandler
+	AuthHandler    *authHandler.AuthHandler
+	StockHandler   *stockHandler.ServiceHandler
+	AddressHandler *addressHandler.AddressHandler
+	UserHandler    *userHandler.UserHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -121,11 +126,13 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
 	sService := stockService.NewStockService(stockRepo, unitRepo, tRepo)
+	addrService := addressService.NewAddressService(addressRepo.NewAddressRepo(db))
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
 	stockHandler := stockHandler.NewStockHandler(sService)
 	uHandler := userHandler.NewUserHandler(uService)
+	addrHandler := addressHandler.NewAddressHandler(addrService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -148,9 +155,10 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		UserService:  uService,
 		StockService: sService,
 
-		AuthHandler:  aHandler,
-		StockHandler: stockHandler,
-		UserHandler:  uHandler,
+		AuthHandler:    aHandler,
+		StockHandler:   stockHandler,
+		UserHandler:    uHandler,
+		AddressHandler: addrHandler,
 	}, nil
 }
 
@@ -175,6 +183,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 		authRouter.RegisterAuthRoutes(v1, c.AuthHandler, c.Config)
 		stockRouter.RegisterStockRoutes(v1, c.StockHandler)
 		userRouter.RegisterUserRoutes(v1, c.UserHandler)
+		addressRouter.RegisterAddressRoutes(v1, c.AddressHandler)
 	}
 }
 
