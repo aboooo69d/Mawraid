@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/najm-x/nova/database/entities"
+	"github.com/najm-x/nova/database/scope"
+	stockFilter "github.com/najm-x/nova/modules/stock/filter"
 	"gorm.io/gorm"
 )
 
 type (
 	StockRepo interface {
 		CreateStock(c context.Context, stock *entities.Stock) error
+		GetStocks(c context.Context, f stockFilter.StockFilter) ([]entities.Stock, int64, error)
 		GetStockById(c context.Context, id string) (*entities.Stock, error)
 		GetStocksByUserId(c context.Context, userId string) ([]entities.Stock, error)
 		GetStockTypeById(c context.Context, id uint) (*entities.StockType, error)
@@ -57,6 +60,32 @@ func validateStockUnits(units []entities.Unit) error {
 		return ErrMainUnitRequired
 	}
 	return nil
+}
+
+func (r *stockRepo) GetStocks(c context.Context, f stockFilter.StockFilter) ([]entities.Stock, int64, error) {
+	q := gorm.G[entities.Stock](r.db).Scopes(f.FilterScopes()...)
+
+	total, err := q.Count(c, "id")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	stocks, err := q.
+		Scopes(
+			stockFilter.OrderByNearest(f.Lat, f.Lng),
+			scope.Paginate(f.Page, f.PageSize),
+		).
+		Preload("StockType", nil).
+		Preload("Units", func(db gorm.PreloadBuilder) error {
+			db.Order("is_main DESC, rate ASC")
+			return nil
+		}).
+		Find(c)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return stocks, total, nil
 }
 
 func (r *stockRepo) GetStockById(c context.Context, id string) (*entities.Stock, error) {
