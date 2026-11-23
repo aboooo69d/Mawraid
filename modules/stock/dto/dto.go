@@ -135,6 +135,18 @@ type StockResponse struct {
 	UpdatedAt    time.Time         `json:"updated_at"`
 }
 
+type StockQueryFilter struct {
+	Name        *string  `form:"name" binding:"omitempty"`
+	StockType   *string  `form:"stock_type" binding:"omitempty"`
+	StockTypeID *uint    `form:"stock_type_id" binding:"omitempty,gt=0"`
+	InStock     *bool    `form:"in_stock" binding:"omitempty"`
+	Lat         *float64 `form:"lat" binding:"omitempty,gte=-90,lte=90"`
+	Lng         *float64 `form:"lng" binding:"omitempty,gte=-180,lte=180"`
+	MaxDistance *float64 `form:"max_distance" binding:"omitempty,gt=0"`
+	Page        int      `form:"page" binding:"omitempty,min=1"`
+	PageSize    int      `form:"page_size" binding:"omitempty,min=1,max=100"`
+}
+
 // ==================== Transaction ====================
 
 // CreateTransactionRequest adds (is_in = true) or withdraws (is_in = false) an amount of a unit.
