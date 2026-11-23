@@ -145,15 +145,8 @@ func (s *userService) GetUserById(c context.Context, id string) (*dto.UserRespon
 }
 
 func (s *userService) GetAllUsers(c context.Context, page int, pageSize int) ([]dto.UserResponseBase, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
-	offset := (page - 1) * pageSize
 
-	users, err := s.userRepo.GetAllUsers(c, pageSize, offset)
+	users, err := s.userRepo.GetAllUsers(c, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -179,12 +172,6 @@ func (s *userService) DeleteUser(c context.Context, id string) error {
 
 // ListUsersByStatus returns a page of users filtered by status (default: pending = new registrations).
 func (s *userService) ListUsersByStatus(c context.Context, q dto.ListUsersQuery) ([]dto.UserResponseBase, *respons.Meta, error) {
-	if q.Page < 1 {
-		q.Page = 1
-	}
-	if q.PerPage < 1 || q.PerPage > 100 {
-		q.PerPage = 10
-	}
 	status := entities.UserStatus(q.Status)
 	if status == "" {
 		status = entities.StatusPending

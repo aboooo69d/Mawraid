@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/najm-x/nova/database/entities"
+	"github.com/najm-x/nova/database/scope"
 	"gorm.io/gorm"
 )
 
@@ -15,9 +16,9 @@ var (
 
 type (
 	TransactionFilter struct {
-		IsIn   *bool // nil = all, true = only in, false = only out
-		Limit  int
-		Offset int
+		IsIn     *bool // nil = all, true = only in, false = only out
+		Page     int
+		PageSize int
 	}
 
 	TransactionRepo interface {
@@ -82,27 +83,26 @@ func (r *transactionRepo) GetTransactionById(c context.Context, stockId string, 
 // GetTransactionsByStockId returns one page of the stock's history (newest first)
 // and the total number of matching transactions (for pagination).
 func (r *transactionRepo) GetTransactionsByStockId(c context.Context, stockId string, f TransactionFilter) ([]entities.Transaction, int64, error) {
-	q := r.db.WithContext(c).
-		Model(&entities.Transaction{}).
-		Where("stock_id = ?", stockId)
+	q := gorm.G[entities.Transaction](r.db).Where("stock_id = ?", stockId)
 	if f.IsIn != nil {
 		q = q.Where("is_in = ?", *f.IsIn)
 	}
-	// Session makes q safe to reuse for both the Count and the Find queries.
-	q = q.Session(&gorm.Session{})
 
-	var total int64
-	if err := q.Count(&total).Error; err != nil {
+	total, err := q.Count(c, "id")
+	if err != nil {
 		return nil, 0, err
 	}
 
-	var list []entities.Transaction
-	err := q.Preload("Unit", withDeleted).
+	list, err := q.
+		Scopes(scope.Paginate(f.Page, f.PageSize)).
+		Preload("Unit", nil).
 		Order("created_at DESC").
-		Limit(f.Limit).
-		Offset(f.Offset).
-		Find(&list).Error
-	return list, total, err
+		Find(c)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return list, total, nil
 }
 
 // withDeleted loads soft-deleted units too, so old transactions still show their unit.

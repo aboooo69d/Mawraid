@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/najm-x/nova/database/entities"
+	"github.com/najm-x/nova/database/scope"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +14,7 @@ type (
 		UpdateUser(c context.Context, id string, user *entities.User) error
 		GetUserById(c context.Context, id string) (*entities.User, error)
 		GetUserByPhone(c context.Context, phone string) (*entities.User, error)
-		GetAllUsers(c context.Context, limit int, offset int) ([]entities.User, error)
+		GetAllUsers(c context.Context, page int, pageSize int) ([]entities.User, error)
 		DeleteUser(c context.Context, id string) error
 		ListUsersByStatus(c context.Context, status entities.UserStatus, limit int, offset int) ([]entities.User, int64, error)
 		UpdateUserStatus(c context.Context, id string, status entities.UserStatus) error
@@ -108,15 +109,11 @@ func (u *userRepo) GetUserByPhone(c context.Context, phone string) (*entities.Us
 	return &user, err
 }
 
-func (u *userRepo) GetAllUsers(c context.Context, limit int, offset int) ([]entities.User, error) {
-	return gorm.G[entities.User](u.db).
-		Preload("Role", nil).
+func (u *userRepo) GetAllUsers(c context.Context, page int, pageSize int) ([]entities.User, error) {
+	return gorm.G[entities.User](u.db).Scopes(scope.Paginate(page, pageSize)).Preload("Role", nil).
 		Preload("Provider", nil).
 		Preload("Provider.ProviderType", nil).
-		Preload("Consumer", nil).
-		Limit(limit).
-		Offset(offset).
-		Find(c)
+		Preload("Consumer", nil).Find(c)
 }
 
 func (u *userRepo) DeleteUser(c context.Context, id string) error {

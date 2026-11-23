@@ -314,11 +314,10 @@ func (s *stockService) GetTransactions(c context.Context, userId string, stockId
 		return nil, nil, err
 	}
 
-	page, pageSize := normalizePage(q.Page, q.PageSize)
 	txs, total, err := s.transactionRepo.GetTransactionsByStockId(c, stock.ID.String(), stockRepo.TransactionFilter{
-		IsIn:   q.IsIn,
-		Limit:  pageSize,
-		Offset: (page - 1) * pageSize,
+		IsIn:     q.IsIn,
+		Page:     q.Page,
+		PageSize: q.PageSize,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -328,7 +327,7 @@ func (s *stockService) GetTransactions(c context.Context, userId string, stockId
 	for i := range txs {
 		list = append(list, stockDto.ToTransactionResponse(&txs[i]))
 	}
-	return list, buildMeta(page, pageSize, total), nil
+	return list, buildMeta(q.Page, q.PageSize, total), nil
 }
 
 // ==================== Helpers ====================
@@ -453,19 +452,6 @@ func mapRepoErr(err error) error {
 		return stockDto.ErrStockNotFound
 	}
 	return err
-}
-
-func normalizePage(page int, pageSize int) (int, int) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = defaultPageSize
-	}
-	if pageSize > maxPageSize {
-		pageSize = maxPageSize
-	}
-	return page, pageSize
 }
 
 func buildMeta(page int, pageSize int, total int64) *respons.Meta {
