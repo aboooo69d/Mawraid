@@ -32,7 +32,7 @@ func NewStockHandler(s stockService.StockService) *ServiceHandler {
 // @Failure      404      {object}  respons.Response  "Stock type not found"
 // @Failure      409      {object}  respons.Response  "Duplicate unit name"
 // @Failure      500      {object}  respons.Response  "Internal server error"
-// @Router       /stocks [post]
+// @Router       /stocks/me [post]
 func (h *ServiceHandler) CreateStock(ctx *gin.Context) {
 	var req stockDto.CreateStockRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -58,7 +58,7 @@ func (h *ServiceHandler) CreateStock(ctx *gin.Context) {
 // @Success      200        {object}  respons.Response{data=[]stockDto.StockResponse}  "Stocks retrieved successfully"
 // @Failure      400        {object}  respons.Response  "Invalid user ID"
 // @Failure      500        {object}  respons.Response  "Internal server error"
-// @Router       /stocks [get]
+// @Router       /stocks/me [get]
 func (h *ServiceHandler) GetUserStocks(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 
@@ -80,7 +80,7 @@ func (h *ServiceHandler) GetUserStocks(ctx *gin.Context) {
 // @Success      200       {object}  respons.Response{data=stockDto.StockResponse}  "Stock retrieved successfully"
 // @Failure      404       {object}  respons.Response  "Stock not found"
 // @Failure      500       {object}  respons.Response  "Internal server error"
-// @Router       /stocks/{stock_id} [get]
+// @Router       /stocks/me/{stock_id} [get]
 func (h *ServiceHandler) GetStock(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 	stockId := getStockID(ctx)
@@ -111,7 +111,7 @@ func (h *ServiceHandler) GetStock(ctx *gin.Context) {
 // @Failure      404       {object}  respons.Response  "Stock not found"
 // @Failure      409       {object}  respons.Response  "Duplicate unit name"
 // @Failure      500       {object}  respons.Response  "Internal server error"
-// @Router       /stocks/{stock_id}/units [post]
+// @Router       /stocks/me/{stock_id}/units [post]
 func (h *ServiceHandler) AddUnit(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 	stockId := getStockID(ctx)
@@ -149,7 +149,7 @@ func (h *ServiceHandler) AddUnit(ctx *gin.Context) {
 // @Failure      404       {object}  respons.Response  "Stock or unit not found"
 // @Failure      409       {object}  respons.Response  "Duplicate unit name or unit has transactions"
 // @Failure      500       {object}  respons.Response  "Internal server error"
-// @Router       /stocks/{stock_id}/units/{unit_id} [patch]
+// @Router       /stocks/me/{stock_id}/units/{unit_id} [patch]
 func (h *ServiceHandler) UpdateUnit(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 	stockId := getStockID(ctx)
@@ -192,7 +192,7 @@ func (h *ServiceHandler) UpdateUnit(ctx *gin.Context) {
 // @Failure      404       {object}  respons.Response  "Stock not found"
 // @Failure      409       {object}  respons.Response  "Insufficient stock"
 // @Failure      500       {object}  respons.Response  "Internal server error"
-// @Router       /stocks/{stock_id}/transactions [post]
+// @Router       /stocks/me/{stock_id}/transactions [post]
 func (h *ServiceHandler) CreateTransaction(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 	stockId := getStockID(ctx)
@@ -229,7 +229,7 @@ func (h *ServiceHandler) CreateTransaction(ctx *gin.Context) {
 // @Failure      400        {object}  respons.Response  "Invalid query parameters"
 // @Failure      404        {object}  respons.Response  "Stock not found"
 // @Failure      500        {object}  respons.Response  "Internal server error"
-// @Router       /stocks/{stock_id}/transactions [get]
+// @Router       /stocks/me/{stock_id}/transactions [get]
 func (h *ServiceHandler) GetTransactions(ctx *gin.Context) {
 	userId := ctx.GetString("user_id")
 	stockId := getStockID(ctx)
