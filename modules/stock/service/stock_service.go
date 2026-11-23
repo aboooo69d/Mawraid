@@ -12,6 +12,7 @@ import (
 	"github.com/najm-x/nova/database/entities"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	stockDto "github.com/najm-x/nova/modules/stock/dto"
+	stockFilter "github.com/najm-x/nova/modules/stock/filter"
 	stockRepo "github.com/najm-x/nova/modules/stock/repo"
 	"github.com/najm-x/nova/pkg/geo"
 	"github.com/najm-x/nova/pkg/respons"
@@ -28,6 +29,7 @@ type (
 	StockService interface {
 		// Stock
 		CreateStock(c context.Context, userId string, req stockDto.CreateStockRequest) (*stockDto.StockResponse, error)
+		GetStocks(c context.Context, q stockDto.StockQueryFilter) ([]stockDto.StockResponse, *respons.Meta, error)
 		GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error)
 		GetStock(c context.Context, userId string, stockId string) (*stockDto.StockResponse, error)
 
@@ -141,6 +143,57 @@ func (s *stockService) CreateStock(c context.Context, userId string, req stockDt
 
 	// Reload to get StockType and DB defaults.
 	return s.GetStock(c, userId, stock.ID.String())
+}
+
+func (s *stockService) GetStocks(c context.Context, q stockDto.StockQueryFilter) ([]stockDto.StockResponse, *respons.Meta, error) {
+	if (q.Lat == nil) != (q.Lng == nil) {
+		return nil, nil, respons.ErrBadRequest
+	}
+	if q.Lat != nil && q.Lng != nil {
+		lat, lng := *q.Lat, *q.Lng
+		if math.IsNaN(lat) || math.IsInf(lat, 0) || lat < -90 || lat > 90 ||
+			math.IsNaN(lng) || math.IsInf(lng, 0) || lng < -180 || lng > 180 {
+			return nil, nil, respons.ErrBadRequest
+		}
+	}
+	if q.MaxDistance != nil {
+		if q.Lat == nil || q.Lng == nil || math.IsNaN(*q.MaxDistance) || math.IsInf(*q.MaxDistance, 0) || *q.MaxDistance <= 0 {
+			return nil, nil, respons.ErrBadRequest
+		}
+	}
+
+	page := q.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := q.PageSize
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+
+	stocks, total, err := s.stockRepo.GetStocks(c, stockFilter.StockFilter{
+		Name:        q.Name,
+		StockType:   q.StockType,
+		StockTypeID: q.StockTypeID,
+		InStock:     q.InStock,
+		Lat:         q.Lat,
+		Lng:         q.Lng,
+		MaxDistance: q.MaxDistance,
+		Page:        page,
+		PageSize:    pageSize,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res := make([]stockDto.StockResponse, 0, len(stocks))
+	for i := range stocks {
+		res = append(res, stockDto.ToStockResponse(&stocks[i]))
+	}
+	return res, buildMeta(page, pageSize, total), nil
 }
 
 func (s *stockService) GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error) {
@@ -455,6 +508,15 @@ func mapRepoErr(err error) error {
 }
 
 func buildMeta(page int, pageSize int, total int64) *respons.Meta {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
 	return &respons.Meta{
 		Page:       page,
 		PerPage:    pageSize,
