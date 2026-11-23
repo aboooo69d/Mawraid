@@ -10,11 +10,6 @@ import (
 func RegisterUserRoutes(rg *gin.RouterGroup, h *handler.UserHandler) {
 	rg.GET("/provider-types", h.ListProviderTypes)
 
-	users := rg.Group("/user").Use(middleware.SessionHandler())
-	{
-		users.GET("/me/stock", h.GetUserStock)
-	}
-
 	admin := rg.Group("/admin", middleware.SessionHandler(), middleware.RequireRole(roleRepo.RoleAdmin))
 	{
 		adminUsers := admin.Group("/users")

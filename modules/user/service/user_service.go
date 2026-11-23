@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/najm-x/nova/database/entities"
-	stockDto "github.com/najm-x/nova/modules/stock/dto"
 	"github.com/najm-x/nova/modules/user/dto"
 	"github.com/najm-x/nova/modules/user/repo"
 	"github.com/najm-x/nova/pkg/respons"
@@ -23,21 +22,18 @@ type (
 		ListUsersByStatus(c context.Context, q dto.ListUsersQuery) ([]dto.UserResponseBase, *respons.Meta, error)
 		GetUserDetail(c context.Context, id string) (*dto.UserDetailResponse, error)
 		ChangeUserStatus(c context.Context, id string, action string) (*dto.UserResponseBase, error)
-		GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error)
 		CreateProviderType(c context.Context, req dto.CreateProviderTypeRequest) (*dto.ProviderTypeResponse, error)
 		GetProviderTypes(c context.Context) ([]dto.ProviderTypeResponse, error)
 	}
 
 	userService struct {
-		userRepo  repo.UserRepo
-		stockRepo repo.UserStockRepo
+		userRepo repo.UserRepo
 	}
 )
 
-func NewUserService(userRepo repo.UserRepo, stockRepo repo.UserStockRepo) UserService {
+func NewUserService(userRepo repo.UserRepo) UserService {
 	return &userService{
-		userRepo:  userRepo,
-		stockRepo: stockRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -179,23 +175,6 @@ func (s *userService) DeleteUser(c context.Context, id string) error {
 		return err
 	}
 	return nil
-}
-
-func (s *userService) GetUserStock(c context.Context, userId string) (*stockDto.StockResponse, error) {
-	if _, err := uuid.Parse(userId); err != nil {
-		return nil, respons.ErrBadRequest
-	}
-
-	stock, err := s.stockRepo.GetStockByUserId(c, userId)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, stockDto.ErrStockNotFound
-		}
-		return nil, err
-	}
-
-	res := stockDto.ToStockResponse(stock)
-	return &res, nil
 }
 
 // ListUsersByStatus returns a page of users filtered by status (default: pending = new registrations).

@@ -160,11 +160,6 @@ func (m *mockUserRepo) ProviderTypeExistsByNameOrSlug(c context.Context, name st
 	return false, nil
 }
 
-type mockStockRepo struct{}
-
-func (m *mockStockRepo) GetStockByUserId(c context.Context, userId string) (*entities.Stock, error) {
-	return nil, gorm.ErrRecordNotFound
-}
 
 var _ userRepo.UserRepo = (*mockUserRepo)(nil)
 
@@ -173,7 +168,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("CreateProviderType trims name and normalizes slug", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		res, err := svc.CreateProviderType(ctx, dto.CreateProviderTypeRequest{
 			Name: "  Water Station  ",
@@ -195,7 +190,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("CreateProviderType rejects duplicate name or slug case-insensitively", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		_, err := svc.CreateProviderType(ctx, dto.CreateProviderTypeRequest{
 			Name: "Gas Station",
@@ -224,7 +219,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("CreateProviderType rejects whitespace-only input", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		_, err := svc.CreateProviderType(ctx, dto.CreateProviderTypeRequest{
 			Name: "   ",
@@ -237,7 +232,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("GetProviderTypes returns non-nil empty slice and ordered items", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		emptyList, err := svc.GetProviderTypes(ctx)
 		if err != nil {
@@ -261,7 +256,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("GetUserDetail includes ProviderTypeID and ProviderType", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		uid := uuid.New()
 		pt := entities.ProviderType{
@@ -303,7 +298,7 @@ func TestProviderTypeService(t *testing.T) {
 
 	t.Run("UpdateUser updates provider_type_id when valid and returns 404 when missing", func(t *testing.T) {
 		repo := newMockUserRepo()
-		svc := service.NewUserService(repo, &mockStockRepo{})
+		svc := service.NewUserService(repo)
 
 		_ = repo.CreateProviderType(ctx, &entities.ProviderType{Name: "Gas", Slug: "gas"})
 		_ = repo.CreateProviderType(ctx, &entities.ProviderType{Name: "Water", Slug: "water"})
@@ -348,7 +343,7 @@ func TestProviderTypeService(t *testing.T) {
 func TestProviderTypeHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := newMockUserRepo()
-	svc := service.NewUserService(repo, &mockStockRepo{})
+	svc := service.NewUserService(repo)
 	h := handler.NewUserHandler(svc)
 
 	r := gin.New()

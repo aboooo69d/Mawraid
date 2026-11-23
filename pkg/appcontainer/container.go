@@ -49,7 +49,6 @@ type AppContainer struct {
 
 	// Repositories
 	UserRepo        userRepo.UserRepo
-	UserStockRepo   userRepo.UserStockRepo
 	RoleRepo        roleRepo.RoleRepo
 	OtpRepo         authRepo.OtpRepo
 	UnitRepo        stockRepo.UnitRepo
@@ -111,7 +110,6 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 	// 7. Repositories
 	uRepo := userRepo.NewUserRepo(db)
-	uStockRepo := userRepo.NewUserStockRepo(db)
 	rRepo := roleRepo.NewRoleRepo(db)
 	oRepo := authRepo.NewOtpRepo(rdb)
 	unitRepo := stockRepo.NewUnitRepo(db)
@@ -121,7 +119,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	// 8. Services
 	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
-	uService := userService.NewUserService(uRepo, uStockRepo)
+	uService := userService.NewUserService(uRepo)
 	sService := stockService.NewStockService(stockRepo, unitRepo, tRepo)
 
 	// 9. Handlers
@@ -139,7 +137,6 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		Store:       store,
 
 		UserRepo:        uRepo,
-		UserStockRepo:   uStockRepo,
 		RoleRepo:        rRepo,
 		OtpRepo:         oRepo,
 		UnitRepo:        unitRepo,
