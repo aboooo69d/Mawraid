@@ -50,6 +50,40 @@ func (h *ServiceHandler) CreateStock(ctx *gin.Context) {
 	respons.OK(ctx, stockInfo)
 }
 
+// GetStocks godoc
+// @Summary      List stocks for consumers
+// @Description  Returns paginated stocks with optional filtering and nearest-location sorting.
+// @Tags         Stock
+// @Produce      json
+// @Param        name          query     string   false  "Search by provider name or stock address"
+// @Param        stock_type    query     string   false  "Filter by stock type slug or name"
+// @Param        stock_type_id query     int      false  "Filter by stock type ID"
+// @Param        in_stock      query     bool     false  "Filter by availability (true = available > 0, false = available <= 0)"
+// @Param        lat           query     number   false  "Consumer latitude (-90 to 90) for nearest sorting"
+// @Param        lng           query     number   false  "Consumer longitude (-180 to 180) for nearest sorting"
+// @Param        max_distance  query     number   false  "Maximum distance in meters (requires lat and lng)"
+// @Param        page          query     int      false  "Page number (default 1)"
+// @Param        page_size     query     int      false  "Page size (default 10, max 100)"
+// @Success      200           {object}  respons.Response{data=[]stockDto.StockResponse}  "Stocks retrieved successfully"
+// @Failure      400           {object}  respons.Response  "Invalid query parameters"
+// @Failure      500           {object}  respons.Response  "Internal server error"
+// @Router       /stocks [get]
+func (h *ServiceHandler) GetStocks(ctx *gin.Context) {
+	var q stockDto.StockQueryFilter
+	if err := ctx.ShouldBindQuery(&q); err != nil {
+		_ = ctx.Error(respons.ErrBadRequest)
+		return
+	}
+
+	stocks, meta, err := h.stockService.GetStocks(ctx.Request.Context(), q)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	respons.OKWithMeta(ctx, stocks, meta)
+}
+
 // GetUserStocks godoc
 // @Summary      List user stocks
 // @Description  Returns all stocks owned by the authenticated user.
