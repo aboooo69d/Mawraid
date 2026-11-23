@@ -20,8 +20,8 @@ func RegisterAddressRoutes(rg *gin.RouterGroup, h *addressHandler.AddressHandler
 	// Admin: read any user's addresses.
 	admin := rg.Group("/admin", middleware.SessionHandler(), middleware.RequireRole(roleRepo.RoleAdmin))
 	{
-		admin.GET("/users/:user_id/addresses", h.AdminListUserAddresses)
-		admin.GET("/users/:user_id/addresses/default", h.AdminGetUserDefaultAddress)
+		admin.GET("/users/:id/addresses", h.AdminListUserAddresses)
+		admin.GET("/users/:id/addresses/default", h.AdminGetUserDefaultAddress)
 		admin.GET("/addresses/:address_id", h.AdminGetAddress)
 	}
 }

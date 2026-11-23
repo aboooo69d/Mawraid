@@ -84,7 +84,7 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 
 	// // 2. Auto-migrate schema and seed required roles
 	// if err := database.AutoMigrateAndSeed(db); err != nil {
-	// 	return nil, fmt.Errorf("appcontainer: migration error: %w", errcon)
+	// 	return nil, fmt.Errorf("appcontainer: migration error: %w", err)
 	// }
 
 	// 3. Connect to Redis

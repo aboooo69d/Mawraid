@@ -92,7 +92,7 @@ func (h *AddressHandler) GetMyDefaultAddress(ctx *gin.Context) {
 // @Success      200  {object}  respons.Response{data=[]addressDto.AddressResponse}
 // @Router       /admin/users/{user_id}/addresses [get]
 func (h *AddressHandler) AdminListUserAddresses(ctx *gin.Context) {
-	h.list(ctx, ctx.Param("user_id"))
+	h.list(ctx, ctx.Param("id"))
 }
 
 // AdminGetUserDefaultAddress godoc
@@ -104,7 +104,7 @@ func (h *AddressHandler) AdminListUserAddresses(ctx *gin.Context) {
 // @Failure      404  {object}  respons.Response
 // @Router       /admin/users/{user_id}/addresses/default [get]
 func (h *AddressHandler) AdminGetUserDefaultAddress(ctx *gin.Context) {
-	res, err := h.svc.GetDefaultAddress(ctx.Request.Context(), ctx.Param("user_id"))
+	res, err := h.svc.GetDefaultAddress(ctx.Request.Context(), ctx.Param("id"))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
