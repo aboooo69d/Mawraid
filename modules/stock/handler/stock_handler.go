@@ -171,7 +171,7 @@ func (h *ServiceHandler) AddUnit(ctx *gin.Context) {
 
 // UpdateUnit godoc
 // @Summary      Update stock unit
-// @Description  Updates the name and/or rate of an existing unit in a stock.
+// @Description  Updates the name, rate, and/or price of an existing unit in a stock.
 // @Tags         Stock
 // @Accept       json
 // @Produce      json
