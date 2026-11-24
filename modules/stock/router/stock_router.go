@@ -13,6 +13,7 @@ func RegisterStockRoutes(rg *gin.RouterGroup, h *handler.ServiceHandler) {
 	{
 		stocks.GET("/types", middleware.RequireRole(roleRepo.RoleProvider, roleRepo.RoleAdmin), h.GetStockTypes)
 		stocks.GET("", middleware.RequireRole(roleRepo.RoleConsumer, roleRepo.RoleAdmin), h.GetStocks)
+		stocks.GET("/:stock_id", middleware.RequireRole(roleRepo.RoleConsumer, roleRepo.RoleAdmin), h.GetStockByID)
 	}
 
 	// Provider: manage the provider's own stocks.
