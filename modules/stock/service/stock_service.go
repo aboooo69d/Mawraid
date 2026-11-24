@@ -30,6 +30,7 @@ type (
 		// Stock
 		CreateStock(c context.Context, userId string, req stockDto.CreateStockRequest) (*stockDto.StockResponse, error)
 		GetStocks(c context.Context, q stockDto.StockQueryFilter) ([]stockDto.StockResponse, *respons.Meta, error)
+		GetStockByID(c context.Context, stockId string) (*stockDto.StockResponse, error)
 		GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error)
 		GetStock(c context.Context, userId string, stockId string) (*stockDto.StockResponse, error)
 
@@ -195,6 +196,24 @@ func (s *stockService) GetStocks(c context.Context, q stockDto.StockQueryFilter)
 		res = append(res, stockDto.ToStockResponse(&stocks[i]))
 	}
 	return res, buildMeta(page, pageSize, total), nil
+}
+
+// GetStockByID returns a stock's info, units, and available balance in every unit by stock ID.
+func (s *stockService) GetStockByID(c context.Context, stockId string) (*stockDto.StockResponse, error) {
+	if _, err := uuid.Parse(stockId); err != nil {
+		return nil, stockDto.ErrStockNotFound
+	}
+
+	stock, err := s.stockRepo.GetStockById(c, stockId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stockDto.ErrStockNotFound
+		}
+		return nil, err
+	}
+
+	res := stockDto.ToStockResponse(stock)
+	return &res, nil
 }
 
 func (s *stockService) GetUserStocks(c context.Context, userId string) ([]stockDto.StockResponse, error) {
