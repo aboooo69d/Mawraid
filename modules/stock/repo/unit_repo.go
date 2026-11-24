@@ -14,6 +14,7 @@ var (
 	ErrMainUnitRate         = errors.New("main unit rate must be 1")
 	ErrMainUnitRequired     = errors.New("stock must have exactly one main unit")
 	ErrInvalidUnitRate      = errors.New("unit rate must be at least 1")
+	ErrInvalidUnitPrice     = errors.New("unit price cannot be negative")
 	ErrCannotDeleteMainUnit = errors.New("main unit cannot be deleted")
 	// Changing the rate of a used unit would corrupt the meaning of its past transactions.
 	ErrUnitHasTransactions = errors.New("cannot change rate of a unit that has transactions")
@@ -44,6 +45,9 @@ func NewUnitRepo(db *gorm.DB) UnitRepo {
 func (u *unitRepo) CreateUnit(c context.Context, unit *entities.Unit) error {
 	if unit.Rate < 1 {
 		return ErrInvalidUnitRate
+	}
+	if unit.Price < 0 {
+		return ErrInvalidUnitPrice
 	}
 	unit.IsMain = false
 	return gorm.G[entities.Unit](u.db).Create(c, unit)
@@ -77,7 +81,7 @@ func (u *unitRepo) GetMainUnit(c context.Context, stockId string) (*entities.Uni
 	return &unit, nil
 }
 
-// UpdateUnit updates Name and Rate. IsMain is never changed here.
+// UpdateUnit updates Name, Rate, and Price. IsMain is never changed here.
 func (u *unitRepo) UpdateUnit(c context.Context, stockId string, unitId uint, unit *entities.Unit) error {
 	return u.db.WithContext(c).Transaction(func(tx *gorm.DB) error {
 		var current entities.Unit
@@ -91,6 +95,9 @@ func (u *unitRepo) UpdateUnit(c context.Context, stockId string, unitId uint, un
 		}
 		if unit.Rate < 1 {
 			return ErrInvalidUnitRate
+		}
+		if unit.Price < 0 {
+			return ErrInvalidUnitPrice
 		}
 
 		if unit.Rate != current.Rate {
@@ -107,8 +114,8 @@ func (u *unitRepo) UpdateUnit(c context.Context, stockId string, unitId uint, un
 
 		// Select(...) is required so zero values are written too.
 		return tx.Model(&current).
-			Select("Name", "Rate").
-			Updates(&entities.Unit{Name: unit.Name, Rate: unit.Rate}).Error
+			Select("Name", "Rate", "Price").
+			Updates(&entities.Unit{Name: unit.Name, Rate: unit.Rate, Price: unit.Price}).Error
 	})
 }
 

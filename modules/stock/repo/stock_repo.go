@@ -49,6 +49,9 @@ func validateStockUnits(units []entities.Unit) error {
 		if u.Rate < 1 {
 			return ErrInvalidUnitRate
 		}
+		if u.Price < 0 {
+			return ErrInvalidUnitPrice
+		}
 		if u.IsMain {
 			mainCount++
 			if u.Rate != 1 {
