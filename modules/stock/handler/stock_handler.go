@@ -84,6 +84,32 @@ func (h *ServiceHandler) GetStocks(ctx *gin.Context) {
 	respons.OKWithMeta(ctx, stocks, meta)
 }
 
+// GetStockByID godoc
+// @Summary      Get stock details for consumer
+// @Description  Returns a stock's info, units, and available balance in every unit by stock ID.
+// @Tags         Stock
+// @Produce      json
+// @Param        stock_id  path      string  true  "Stock ID (UUID)"
+// @Success      200       {object}  respons.Response{data=stockDto.StockResponse}  "Stock retrieved successfully"
+// @Failure      404       {object}  respons.Response  "Stock not found"
+// @Failure      500       {object}  respons.Response  "Internal server error"
+// @Router       /stocks/{stock_id} [get]
+func (h *ServiceHandler) GetStockByID(ctx *gin.Context) {
+	stockId := getStockID(ctx)
+	if stockId == "" {
+		_ = ctx.Error(stockDto.ErrStockNotFound)
+		return
+	}
+
+	stockInfo, err := h.stockService.GetStockByID(ctx.Request.Context(), stockId)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	respons.OK(ctx, stockInfo)
+}
+
 // GetUserStocks godoc
 // @Summary      List user stocks
 // @Description  Returns all stocks owned by the authenticated user.
