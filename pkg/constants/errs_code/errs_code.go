@@ -79,6 +79,16 @@ const (
 )
 
 const (
+	// Order Errors: 1800-1899
+	ErrOrderNotFound             = 1800
+	ErrInvalidOrderStatus        = 1801
+	ErrInvalidConsumerType       = 1802
+	ErrConsumerTypeNotAllowed    = 1803
+	ErrConsumerRequired          = 1804
+	ErrOrderTransitionNotAllowed = 1805
+)
+
+const (
 	// Server Errors: 5000-5099
 	ErrInternalServer = 5000
 )
