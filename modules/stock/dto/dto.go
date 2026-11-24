@@ -64,22 +64,25 @@ type StockTypeResponse struct {
 // CreateUnitRequest is used both inside CreateStockRequest (one unit must have is_main = true)
 // and alone to add a unit to an existing stock (is_main must be false).
 type CreateUnitRequest struct {
-	Name   string `json:"name" binding:"required,max=50"`
-	Rate   int    `json:"rate" binding:"required,gte=1"`
-	IsMain bool   `json:"is_main"`
+	Name   string  `json:"name" binding:"required,max=50"`
+	Rate   int     `json:"rate" binding:"required,gte=1"`
+	Price  float64 `json:"price" binding:"required,gt=0"`
+	IsMain bool    `json:"is_main"`
 }
 
 // UpdateUnitRequest: only the sent fields are changed. The main unit cannot be switched.
 type UpdateUnitRequest struct {
-	Name *string `json:"name" binding:"omitempty,min=1,max=50"`
-	Rate *int    `json:"rate" binding:"omitempty,gte=1"`
+	Name  *string  `json:"name" binding:"omitempty,min=1,max=50"`
+	Rate  *int     `json:"rate" binding:"omitempty,gte=1"`
+	Price *float64 `json:"price" binding:"omitempty,gt=0"`
 }
 
 type UnitResponse struct {
-	ID     uint   `json:"id"`
-	Name   string `json:"name"`
-	Rate   int    `json:"rate"`
-	IsMain bool   `json:"is_main"`
+	ID     uint    `json:"id"`
+	Name   string  `json:"name"`
+	Rate   int     `json:"rate"`
+	Price  float64 `json:"price"`
+	IsMain bool    `json:"is_main"`
 }
 
 // UnitBalance is the stock's available quantity expressed in one unit.
@@ -183,6 +186,7 @@ func ToUnitResponse(u entities.Unit) UnitResponse {
 		ID:     u.ID,
 		Name:   u.Name,
 		Rate:   u.Rate,
+		Price:  u.Price,
 		IsMain: u.IsMain,
 	}
 }
