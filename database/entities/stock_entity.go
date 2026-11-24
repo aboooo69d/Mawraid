@@ -9,16 +9,18 @@ import (
 
 type Stock struct {
 	TimeStamp
-	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	Available    float64        `gorm:"type:numeric(10,2);not null;default:0"`
-	Address      string         `gorm:"type:varchar(250);not null"`
-	Location     geo.Point      `gorm:"type:geography(POINT,4326);not null"`
-	StockTypeID  uint           `gorm:"not null;index"`
-	StockType    StockType      `gorm:"foreignKey:StockTypeID"`
-	Units        []Unit         `gorm:"foreignKey:StockID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	UserID       uuid.UUID      `gorm:"type:uuid;not null;index"`
-	User         User           `gorm:"foreignKey:UserID"`
-	StockDetails datatypes.JSON `gorm:"type:jsonb"`
+	ID              uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Available       float64        `gorm:"type:numeric(10,2);not null;default:0"`
+	PendingOrders   int            `gorm:"not null;default:0"`
+	CompletedOrders int            `gorm:"not null;default:0"`
+	Address         string         `gorm:"type:varchar(250);not null"`
+	Location        geo.Point      `gorm:"type:geography(POINT,4326);not null"`
+	StockTypeID     uint           `gorm:"not null;index"`
+	StockType       StockType      `gorm:"foreignKey:StockTypeID"`
+	Units           []Unit         `gorm:"foreignKey:StockID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	UserID          uuid.UUID      `gorm:"type:uuid;not null;index"`
+	User            User           `gorm:"foreignKey:UserID"`
+	StockDetails    datatypes.JSON `gorm:"type:jsonb"`
 }
 
 type StockType struct {
