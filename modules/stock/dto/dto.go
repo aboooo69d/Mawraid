@@ -125,17 +125,19 @@ type UpdateStockRequest struct {
 }
 
 type StockResponse struct {
-	ID           uuid.UUID         `json:"id"`
-	Available    float64           `json:"available"` // in the main unit
-	Address      string            `json:"address"`
-	Location     LocationResponse  `json:"location"`
-	Units        []UnitResponse    `json:"units"`
-	Balances     []UnitBalance     `json:"balances"` // available in every unit
-	StockType    StockTypeResponse `json:"type"`
-	StockDetails map[string]any    `json:"stock_details"`
-	UserID       uuid.UUID         `json:"user_id"`
-	CreatedAt    time.Time         `json:"created_at"`
-	UpdatedAt    time.Time         `json:"updated_at"`
+	ID              uuid.UUID         `json:"id"`
+	Available       float64           `json:"available"` // in the main unit
+	PendingOrders   int               `json:"pending_orders"`
+	CompletedOrders int               `json:"completed_orders"`
+	Address         string            `json:"address"`
+	Location        LocationResponse  `json:"location"`
+	Units           []UnitResponse    `json:"units"`
+	Balances        []UnitBalance     `json:"balances"` // available in every unit
+	StockType       StockTypeResponse `json:"type"`
+	StockDetails    map[string]any    `json:"stock_details"`
+	UserID          uuid.UUID         `json:"user_id"`
+	CreatedAt       time.Time         `json:"created_at"`
+	UpdatedAt       time.Time         `json:"updated_at"`
 }
 
 type StockQueryFilter struct {
@@ -220,17 +222,19 @@ func ToStockResponse(st *entities.Stock) StockResponse {
 	}
 
 	return StockResponse{
-		ID:           st.ID,
-		Available:    st.Available,
-		Address:      st.Address,
-		Location:     ToLocationResponse(st.Location),
-		Units:        units,
-		Balances:     balances,
-		StockType:    ToStockTypeResponse(&st.StockType),
-		StockDetails: details,
-		UserID:       st.UserID,
-		CreatedAt:    st.CreatedAt,
-		UpdatedAt:    st.UpdatedAt,
+		ID:              st.ID,
+		Available:       st.Available,
+		PendingOrders:   st.PendingOrders,
+		CompletedOrders: st.CompletedOrders,
+		Address:         st.Address,
+		Location:        ToLocationResponse(st.Location),
+		Units:           units,
+		Balances:        balances,
+		StockType:       ToStockTypeResponse(&st.StockType),
+		StockDetails:    details,
+		UserID:          st.UserID,
+		CreatedAt:       st.CreatedAt,
+		UpdatedAt:       st.UpdatedAt,
 	}
 }
 
