@@ -18,6 +18,10 @@ import (
 	authRepo "github.com/najm-x/nova/modules/auth/repo"
 	authRouter "github.com/najm-x/nova/modules/auth/router"
 	authService "github.com/najm-x/nova/modules/auth/service"
+	orderHandler "github.com/najm-x/nova/modules/order/handler"
+	orderRepo "github.com/najm-x/nova/modules/order/repo"
+	orderRouter "github.com/najm-x/nova/modules/order/router"
+	orderService "github.com/najm-x/nova/modules/order/service"
 	roleRepo "github.com/najm-x/nova/modules/role/repo"
 	stockHandler "github.com/najm-x/nova/modules/stock/handler"
 	stockRepo "github.com/najm-x/nova/modules/stock/repo"
@@ -58,17 +62,21 @@ type AppContainer struct {
 	UnitRepo        stockRepo.UnitRepo
 	TransactionRepo stockRepo.TransactionRepo
 	StockRepo       stockRepo.StockRepo
+	AddressRepo     addressRepo.AddressRepo
+	OrderRepo       orderRepo.OrderRepo
 	// Services
 	OtpService   authService.OtpService
 	AuthService  authService.AuthService
 	UserService  userService.UserService
 	StockService stockService.StockService
+	OrderService orderService.OrderService
 
 	// Handlers
 	AuthHandler    *authHandler.AuthHandler
 	StockHandler   *stockHandler.ServiceHandler
 	AddressHandler *addressHandler.AddressHandler
 	UserHandler    *userHandler.UserHandler
+	OrderHandler   *orderHandler.OrderHandler
 }
 
 // NewAppContainer wires together database, redis, storage, repositories, services, and handlers.
@@ -120,19 +128,23 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 	unitRepo := stockRepo.NewUnitRepo(db)
 	tRepo := stockRepo.NewTransactionRepo(db)
 	stockRepo := stockRepo.NewStockRepo(db)
+	addrRepo := addressRepo.NewAddressRepo(db)
+	ordRepo := orderRepo.NewOrderRepo(db)
 
 	// 8. Services
 	oService := authService.NewOtpService(oRepo, uRepo, smsClient)
 	aService := authService.NewAuthService(uRepo, rRepo, oService, rdb, smsClient)
 	uService := userService.NewUserService(uRepo)
 	sService := stockService.NewStockService(stockRepo, unitRepo, tRepo)
-	addrService := addressService.NewAddressService(addressRepo.NewAddressRepo(db))
+	addrService := addressService.NewAddressService(addrRepo)
+	ordService := orderService.NewOrderService(ordRepo, stockRepo, addrRepo)
 
 	// 9. Handlers
 	aHandler := authHandler.NewAuthHandler(aService, oService, uploader)
 	stockHandler := stockHandler.NewStockHandler(sService)
 	uHandler := userHandler.NewUserHandler(uService)
 	addrHandler := addressHandler.NewAddressHandler(addrService)
+	ordHandler := orderHandler.NewOrderHandler(ordService)
 
 	return &AppContainer{
 		Config:      cfg,
@@ -149,16 +161,20 @@ func NewAppContainer(ctx context.Context, cfg *config.Config) (*AppContainer, er
 		UnitRepo:        unitRepo,
 		TransactionRepo: tRepo,
 		StockRepo:       stockRepo,
+		AddressRepo:     addrRepo,
+		OrderRepo:       ordRepo,
 
 		OtpService:   oService,
 		AuthService:  aService,
 		UserService:  uService,
 		StockService: sService,
+		OrderService: ordService,
 
 		AuthHandler:    aHandler,
 		StockHandler:   stockHandler,
 		UserHandler:    uHandler,
 		AddressHandler: addrHandler,
+		OrderHandler:   ordHandler,
 	}, nil
 }
 
@@ -184,6 +200,7 @@ func (c *AppContainer) RegisterRoutes(r *gin.Engine) {
 		stockRouter.RegisterStockRoutes(v1, c.StockHandler)
 		userRouter.RegisterUserRoutes(v1, c.UserHandler)
 		addressRouter.RegisterAddressRoutes(v1, c.AddressHandler)
+		orderRouter.RegisterOrderRoutes(v1, c.OrderHandler)
 	}
 }
 
