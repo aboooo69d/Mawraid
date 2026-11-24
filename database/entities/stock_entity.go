@@ -33,6 +33,7 @@ type Unit struct {
 	gorm.Model
 	Name    string    `gorm:"type:varchar(50);not null"`
 	Rate    int       `gorm:"not null;default:1"`
+	Price   float64   `gorm:"type:numeric(10,2);not null;default:0"`
 	IsMain  bool      `gorm:"not null;default:false"`
 	StockID uuid.UUID `gorm:"type:uuid;not null;index"`
 }
