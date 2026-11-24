@@ -133,6 +133,7 @@ func (s *stockService) CreateStock(c context.Context, userId string, req stockDt
 		stock.Units = append(stock.Units, entities.Unit{
 			Name:   strings.TrimSpace(u.Name),
 			Rate:   u.Rate,
+			Price:  u.Price,
 			IsMain: u.IsMain,
 		})
 	}
@@ -273,9 +274,14 @@ func (s *stockService) AddUnit(c context.Context, userId string, stockId string,
 		return nil, stockDto.ErrDuplicateUnitName
 	}
 
+	if math.IsNaN(req.Price) || math.IsInf(req.Price, 0) || req.Price <= 0 {
+		return nil, respons.ErrBadRequest
+	}
+
 	unit := &entities.Unit{
 		Name:    name,
 		Rate:    req.Rate,
+		Price:   req.Price,
 		StockID: stock.ID,
 	}
 	if err := s.unitRepo.CreateUnit(c, unit); err != nil {
@@ -286,7 +292,7 @@ func (s *stockService) AddUnit(c context.Context, userId string, stockId string,
 	return &res, nil
 }
 
-// UpdateUnit changes the name and/or rate of a unit. Only the sent fields are changed.
+// UpdateUnit changes the name, rate, and/or price of a unit. Only the sent fields are changed.
 func (s *stockService) UpdateUnit(c context.Context, userId string, stockId string, unitId uint, req stockDto.UpdateUnitRequest) (*stockDto.UnitResponse, error) {
 	stock, err := s.getOwnedStock(c, stockId, userId)
 	if err != nil {
@@ -307,6 +313,12 @@ func (s *stockService) UpdateUnit(c context.Context, userId string, stockId stri
 	}
 	if req.Rate != nil {
 		updated.Rate = *req.Rate
+	}
+	if req.Price != nil {
+		if math.IsNaN(*req.Price) || math.IsInf(*req.Price, 0) || *req.Price <= 0 {
+			return nil, respons.ErrBadRequest
+		}
+		updated.Price = *req.Price
 	}
 
 	if err := s.unitRepo.UpdateUnit(c, stock.ID.String(), unitId, &updated); err != nil {
@@ -456,6 +468,9 @@ func validateNewUnits(units []stockDto.CreateUnitRequest) error {
 		if u.Rate < 1 {
 			return respons.ErrBadRequest
 		}
+		if math.IsNaN(u.Price) || math.IsInf(u.Price, 0) || u.Price <= 0 {
+			return respons.ErrBadRequest
+		}
 		if u.IsMain {
 			mainCount++
 			if u.Rate != 1 {
@@ -497,7 +512,7 @@ func mapRepoErr(err error) error {
 		return stockDto.ErrMainUnitRequired
 	case errors.Is(err, stockRepo.ErrMainUnitRate):
 		return stockDto.ErrMainUnitRate
-	case errors.Is(err, stockRepo.ErrInvalidUnitRate):
+	case errors.Is(err, stockRepo.ErrInvalidUnitRate), errors.Is(err, stockRepo.ErrInvalidUnitPrice):
 		return respons.ErrBadRequest
 	case errors.Is(err, stockRepo.ErrUnitHasTransactions):
 		return stockDto.ErrUnitHasTransactions
