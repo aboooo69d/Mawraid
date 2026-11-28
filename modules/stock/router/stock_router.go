@@ -10,9 +10,10 @@ import (
 func RegisterStockRoutes(rg *gin.RouterGroup, h *handler.ServiceHandler) {
 	// Shared: any authenticated provider/admin can browse stock types.
 	stocks := rg.Group("/stocks", middleware.SessionHandler())
+	publicStock := rg.Group("/stocks")
 	{
 		stocks.GET("/types", middleware.RequireRole(roleRepo.RoleProvider, roleRepo.RoleAdmin), h.GetStockTypes)
-		stocks.GET("", middleware.RequireRole(roleRepo.RoleConsumer, roleRepo.RoleAdmin), h.GetStocks)
+		publicStock.GET("", h.GetStocks)
 		stocks.GET("/:stock_id", middleware.RequireRole(roleRepo.RoleConsumer, roleRepo.RoleAdmin), h.GetStockByID)
 	}
 
