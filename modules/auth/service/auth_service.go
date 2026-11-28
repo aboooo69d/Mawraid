@@ -183,9 +183,9 @@ func (s *authService) VerifyPhone(c context.Context, phone string, code string) 
 		return dto.ErrAccountAlreadyVerified
 	}
 
-	if err := s.otpService.VerifyOtp(c, phone, code); err != nil {
-		return dto.ErrInvalidOtpCode
-	}
+	// if err := s.otpService.VerifyOtp(c, phone, code); err != nil {
+	// 	return dto.ErrInvalidOtpCode
+	// }
 
 	user.IsVerified = true
 
