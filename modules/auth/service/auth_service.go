@@ -24,6 +24,7 @@ type (
 		RegisterConsumer(c context.Context, req userDto.CreateConsumerRequest) (*userDto.ConsumerResponse, error)
 		RegisterProvider(c context.Context, req userDto.CreateProviderRequest) (*userDto.ProviderResponse, error)
 		Login(c context.Context, req dto.UserLoginRequest) (*userDto.UserResponseBase, error)
+		Me(c context.Context, userID string) (*userDto.UserDetailResponse, error)
 		VerifyPhone(c context.Context, phone string, code string) error
 		ForgetPassword(c context.Context, phone string) error
 		ResetPassword(c context.Context, req dto.RestPasswordRequest) error
@@ -171,6 +172,22 @@ func (s *authService) Login(c context.Context, req dto.UserLoginRequest) (*userD
 	}
 
 	return userDto.ToUserResponse(existingUser), nil
+}
+
+func (s *authService) Me(c context.Context, userID string) (*userDto.UserDetailResponse, error) {
+	if _, err := uuid.Parse(userID); err != nil {
+		return nil, dto.ErrUnauthorized
+	}
+
+	user, err := s.userRepo.GetUserById(c, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, dto.ErrUserNotFound
+		}
+		return nil, dto.ErrInternalServer
+	}
+
+	return userDto.ToUserDetailResponse(user), nil
 }
 
 func (s *authService) VerifyPhone(c context.Context, phone string, code string) error {

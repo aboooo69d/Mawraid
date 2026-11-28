@@ -21,6 +21,7 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler, cfg *config
 		auth.POST("/forget-password", h.ForgetPassword)
 		authWithOutTurnstile.POST("/reset-password", h.ResetPassword)
 		authWithOutTurnstile.POST("/logout", h.LogOut)
+		authWithOutTurnstile.GET("/me", middleware.SessionHandler(), h.Me)
 
 	}
 }

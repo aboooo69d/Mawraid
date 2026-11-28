@@ -222,6 +222,25 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	respons.OK(c, user)
 }
 
+// Me godoc
+// @Summary      Get current authenticated user
+// @Description  Returns the profile details of the currently authenticated user from the active session.
+// @Tags         Auth
+// @Produce      json
+// @Success      200  {object}  respons.Response{data=userDto.UserDetailResponse}  "Authenticated user details"
+// @Failure      401  {object}  respons.Response  "Unauthorized"
+// @Failure      404  {object}  respons.Response  "User not found"
+// @Failure      500  {object}  respons.Response  "Internal server error"
+// @Router       /auth/me [get]
+func (h *AuthHandler) Me(c *gin.Context) {
+	user, err := h.authService.Me(c.Request.Context(), c.GetString("user_id"))
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	respons.OK(c, user)
+}
+
 // Logout godoc
 // @Summary      Logout user
 // @Description  logout and and delete cookies.
